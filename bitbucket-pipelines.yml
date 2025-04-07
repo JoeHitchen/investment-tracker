@@ -1,0 +1,30 @@
+image: python:3.11
+
+
+pipelines:
+  default:
+    - step: &lint
+        name: Lint
+        caches:
+          - pip
+        script:
+          - pip install -r requirements_linting.txt
+          - flake8
+
+    - step: &type
+        name: Type
+        caches:
+          - pip
+        script:
+          - pip install -r requirements_typing.txt
+          - mypy
+
+    - step: &test
+        name: Test
+        caches:
+          - pip
+        script:
+          - pip install -r requirements.txt
+          - pip install -r requirements_testing.txt
+          - pytest
+
