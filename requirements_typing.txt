@@ -1,0 +1,4 @@
+mypy
+django-stubs
+types-requests
+types-beautifulsoup4

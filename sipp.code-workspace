@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "flake8.importStrategy": "fromEnvironment",
+        "mypy-type-checker.importStrategy": "fromEnvironment",
+        "python.testing.pytestArgs": ["core", "sipp"],
+        "python.testing.pytestEnabled": true
+    }
+}
