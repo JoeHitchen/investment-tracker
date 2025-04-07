@@ -34,8 +34,9 @@ class Command(BaseCommand):
                 price_point = get_latest_fund_price(fund)
             except IntegrityError:
                 price_point = exists(fund.price_points.order_by('-date').first())
-            except Exception:
+            except Exception as err:
                 self.stdout.write(f'Error getting latest price point for {fund.short_name}')
+                self.stderr.write(f'{err}')
                 price_point = exists(fund.price_points.order_by('-date').first())
 
             fund_value = (fund.bought_quantity / 100) * price_point.price
