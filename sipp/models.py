@@ -28,6 +28,7 @@ class PricePoint(models.Model):
         return f'{self.fund.tag} ({self.date}) {self.price}'
 
     class Meta:
+        db_table = 'sipp_price_point'
         unique_together = ('fund', 'date')
         ordering = ['fund', 'date']
 
