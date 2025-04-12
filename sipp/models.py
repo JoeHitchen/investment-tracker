@@ -8,14 +8,22 @@ class Fund(models.Model):
     full_name = models.TextField(max_length=255)
     tag = models.CharField(max_length=255)
 
-    bought_on = models.DateField()
-    bought_price = models.IntegerField()  # In hundredths of a pence
-    bought_quantity = models.FloatField()
-
     url = models.URLField(max_length=255)
 
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'
+
+
+class Holding(models.Model):
+
+    fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='holdings')
+    quantity = models.FloatField()
+
+    bought_on = models.DateField()
+    bought_at = models.IntegerField()  # In hundredths of a pence
+
+    class Meta:
+        ordering = ['fund', 'bought_on', '-quantity']
 
 
 class PricePoint(models.Model):
