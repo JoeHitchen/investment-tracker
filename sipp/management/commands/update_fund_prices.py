@@ -26,8 +26,8 @@ class Command(BaseCommand):
     def handle(self, **_: Unpack[CmdArgs]) -> None:
 
         portfolio_value = 0.0
-        self.stdout.write('Value                       Fund')
-        self.stdout.write('==============================================')
+        self.stdout.write('Value                       Fund                            Date')
+        self.stdout.write('======================================================================')
         for fund in sipp.Fund.objects.all():
 
             try:
@@ -39,16 +39,17 @@ class Command(BaseCommand):
                 self.stderr.write(f'{err}')
                 price_point = exists(fund.price_points.order_by('-date').first())
 
-            fund_value = (fund.bought_quantity / 100) * price_point.price
+            fund_value = fund.bought_quantity * price_point.pounds
             portfolio_value += fund_value
 
-            self.stdout.write('{0:.2f}  ({1:6.2f} @ {2:7.2f})  {3}'.format(
+            self.stdout.write('£{:.2f}  ({:6.2f} x £{:7.4f})  {:30}  {}'.format(
                 fund_value,
                 fund.bought_quantity,
-                price_point.price,
-                fund.short_name),
-            )
+                price_point.pounds,
+                fund.short_name,
+                price_point.date.isoformat(),
+            ))
 
-        self.stdout.write('==============================================')
+        self.stdout.write('======================================================================')
         self.stdout.write('Total Portfolio Value: £{0:,.2f}'.format(portfolio_value))
 

@@ -21,12 +21,12 @@ def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
     price_date_soup = fund_page_soup.select_one('div.price-unavailable')
     assert price_date_soup
     price_date_text = price_date_soup.text.strip()
-    price_date = datetime.strptime(price_date_text[13:], '%d %B %Y')
+    price_date = datetime.strptime(price_date_text[13:], '%d %B %Y').date()
 
     price_point = sipp.PricePoint.objects.create(
         fund=fund,
         date=price_date,
-        price_pence=price_value,
+        hundredths=price_value,
     )
 
     return price_point
