@@ -39,13 +39,13 @@ class Command(BaseCommand):
                 self.stderr.write(f'{err}')
                 price_point = exists(fund.price_points.order_by('-date').first())
 
-            fund_value = (fund.bought_quantity / 100) * price_point.price
+            fund_value = fund.bought_quantity * price_point.pounds
             portfolio_value += fund_value
 
-            self.stdout.write('{:.2f}  ({:6.2f} @ {:7.2f})  {:30}  {}'.format(
+            self.stdout.write('£{:.2f}  ({:6.2f} x £{:7.4f})  {:30}  {}'.format(
                 fund_value,
                 fund.bought_quantity,
-                price_point.price,
+                price_point.pounds,
                 fund.short_name,
                 price_point.date.isoformat(),
             ))

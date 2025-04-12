@@ -9,7 +9,7 @@ class Fund(models.Model):
     tag = models.CharField(max_length=255)
 
     bought_on = models.DateField()
-    bought_price = models.IntegerField()  # In pence
+    bought_price = models.IntegerField()  # In hundredths of a pence
     bought_quantity = models.FloatField()
 
     url = models.URLField(max_length=255)
@@ -22,10 +22,10 @@ class PricePoint(models.Model):
 
     fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='price_points')
     date = models.DateField()
-    price_pence = models.IntegerField()  # In pence
+    hundredths = models.IntegerField()  # Fund price in hundredths of a pence
 
     def __str__(self) -> str:
-        return f'{self.fund.tag} ({self.date}) {self.price}'
+        return f'{self.fund.tag} ({self.date}) {self.pence}p'
 
     class Meta:
         db_table = 'sipp_price_point'
@@ -33,6 +33,10 @@ class PricePoint(models.Model):
         ordering = ['fund', 'date']
 
     @cached_property
-    def price(self) -> float:
-        return self.price_pence / 100
+    def pence(self) -> float:
+        return self.hundredths / 100
+
+    @cached_property
+    def pounds(self) -> float:
+        return self.pence / 100
 

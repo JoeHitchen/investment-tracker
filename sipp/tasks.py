@@ -26,7 +26,7 @@ def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
     price_point = sipp.PricePoint.objects.create(
         fund=fund,
         date=price_date,
-        price_pence=price_value,
+        hundredths=price_value,
     )
 
     return price_point
