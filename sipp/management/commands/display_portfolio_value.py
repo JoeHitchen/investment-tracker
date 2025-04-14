@@ -20,7 +20,7 @@ class Command(BaseCommand):
         self.stdout.write('╔═════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
         self.stdout.write('║ Value   │ Breakdown          │ Fund                           │ Date       ║')  # noqa: E501
         self.stdout.write('╠═════════╪════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
-        for holding in sipp.Holding.objects.all():
+        for holding in sipp.Holding.objects.filter(sold_on__isnull=True):
 
             price_point = exists(holding.fund.price_points.last())
             holding_value = holding.quantity * price_point.pounds
