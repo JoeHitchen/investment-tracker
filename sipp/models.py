@@ -14,6 +14,7 @@ class Fund(models.Model):
     tag = models.CharField(max_length=255)
 
     url = models.URLField(max_length=255)
+    monitor_price = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'

@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
         self.stdout.write(' Price   │ Date       │ Fund')
         self.stdout.write('═════════╪════════════╪═══════════════════════')
-        for fund in sipp.Fund.objects.all():
+        for fund in sipp.Fund.objects.filter(monitor_price=True):
             try:
                 price_point = get_latest_fund_price(fund)
                 self.stdout.write('{:7.2f}p │ {} │ {}'.format(
