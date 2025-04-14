@@ -2,8 +2,10 @@ from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
+from django.db import IntegrityError
 
 from sipp import models as sipp
+from sipp.utils import exists
 
 
 def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
@@ -23,11 +25,12 @@ def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
     price_date_text = price_date_soup.text.strip()
     price_date = datetime.strptime(price_date_text[13:], '%d %B %Y').date()
 
-    price_point = sipp.PricePoint.objects.create(
-        fund=fund,
-        date=price_date,
-        hundredths=price_value,
-    )
-
-    return price_point
+    try:
+        return sipp.PricePoint.objects.create(
+            fund=fund,
+            date=price_date,
+            hundredths=price_value,
+        )
+    except IntegrityError:
+        return exists(fund.price_points.last())
 
