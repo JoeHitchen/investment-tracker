@@ -1,4 +1,8 @@
 mypy
 django-stubs
+celery-types
 types-requests
 types-beautifulsoup4
+
+# Project Installs
+celery

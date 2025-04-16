@@ -1,11 +1,24 @@
 from datetime import datetime
+from typing import TypedDict
+import logging
 
 import requests
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
+from django.utils import timezone
+from typing_extensions import Unpack
+from celery import Celery
 
+from core import tasks
 from sipp import models as sipp
 from sipp.utils import exists
+
+
+logger = logging.getLogger('sipp-tracker')
+
+
+class Kwargs(TypedDict):
+    pass
 
 
 def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
@@ -33,4 +46,15 @@ def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
         )
     except IntegrityError:
         return exists(fund.price_points.last())
+
+
+@tasks.task
+def current_time() -> str:
+    logger.info(timezone.now().isoformat())
+    return timezone.now().isoformat()
+
+
+@tasks.on_after_finalize.connect
+def setup_periodic_tasks(sender: Celery, **_: Unpack[Kwargs]) -> None:
+    sender.add_periodic_task(60, current_time.s())
 
