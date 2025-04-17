@@ -1,27 +1,41 @@
 from datetime import datetime
-from typing import TypedDict
+from typing import TypedDict, Unpack
+from enum import Enum
 import logging
+import random
+import time
 
 import requests
 from bs4 import BeautifulSoup
-from django.db import IntegrityError
-from django.utils import timezone
-from typing_extensions import Unpack
 from celery import Celery
+from celery.schedules import crontab
 
 from core import tasks
 from sipp import models as sipp
-from sipp.utils import exists
+from sipp.utils import Kwargs
 
 
 logger = logging.getLogger('sipp-tracker')
 
 
-class Kwargs(TypedDict):
-    pass
+class RefreshStatus(Enum):
+    CREATED = 'Created'
+    UPDATED = 'Updated'
+    NO_CHANGE = 'No Change'
 
 
-def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
+class RefreshFundPriceResult(TypedDict):
+    fund: str
+    price: float
+    status: str
+
+
+def refresh_fund_price(fund: sipp.Fund) -> tuple[sipp.PricePoint, RefreshStatus]:
+
+    logger.info('{} ({}) - Refreshing price...'.format(
+        fund.short_name,
+        fund.tag,
+    ))
 
     response = requests.get(fund.url)
     if not response.ok:
@@ -38,23 +52,52 @@ def get_latest_fund_price(fund: sipp.Fund) -> sipp.PricePoint:
     price_date_text = price_date_soup.text.strip()
     price_date = datetime.strptime(price_date_text[13:], '%d %B %Y').date()
 
-    try:
-        return sipp.PricePoint.objects.create(
-            fund=fund,
-            date=price_date,
-            hundredths=price_value,
-        )
-    except IntegrityError:
-        return exists(fund.price_points.last())
+    logger.info('{} ({}) - Refreshed price: {}p ({})'.format(
+        fund.short_name,
+        fund.tag,
+        price_value / 100,
+        price_date,
+    ))
+
+    price_point, created = fund.price_points.get_or_create(
+        date=price_date,
+        defaults={'hundredths': price_value},
+    )
+    status = RefreshStatus.CREATED if created else RefreshStatus.NO_CHANGE
+    if not created and price_point.hundredths != price_value:
+        status = RefreshStatus.UPDATED
+        price_point.hundredths = price_value
+        price_point.save()
+
+    logger.info('{} ({}) - {}'.format(
+        fund.short_name,
+        fund.tag,
+        status.value,
+    ))
+    return price_point, status
 
 
 @tasks.task
-def current_time() -> str:
-    logger.info(timezone.now().isoformat())
-    return timezone.now().isoformat()
+def refresh_fund_price_async(fund_id: int) -> RefreshFundPriceResult:
+    price_point, status = refresh_fund_price(sipp.Fund.objects.get(id=fund_id))
+    return {
+        'fund': f'{price_point.fund.short_name} ({price_point.fund.tag})',
+        'price': price_point.pence,
+        'status': status.value,
+    }
+
+
+@tasks.task
+def refresh_fund_prices_async() -> None:
+    time.sleep(random.randint(0, 60))
+    for fund in sipp.Fund.objects.filter(monitor_price = True):
+        refresh_fund_price_async.delay(fund.id)
 
 
 @tasks.on_after_finalize.connect
 def setup_periodic_tasks(sender: Celery, **_: Unpack[Kwargs]) -> None:
-    sender.add_periodic_task(60, current_time.s())
+    sender.add_periodic_task(
+        crontab(hour='7,14,17,18,19,20,21,23', minute=35),
+        refresh_fund_prices_async.s(),
+    )
 
