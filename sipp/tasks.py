@@ -97,7 +97,7 @@ def refresh_fund_prices_async() -> None:
 @tasks.on_after_finalize.connect
 def setup_periodic_tasks(sender: Celery, **_: Unpack[Kwargs]) -> None:
     sender.add_periodic_task(
-        crontab(hour='7,14,17,18,19,20,21,23', minute=35),
+        crontab(hour='7,13,17,18,20,23', minute=35),
         refresh_fund_prices_async.s(),
     )
 
