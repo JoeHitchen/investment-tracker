@@ -1,20 +1,14 @@
-from typing import TypedDict
-
 from django.core.management.base import BaseCommand
 from typing_extensions import Unpack
 
 from ... import models as sipp
-from ...utils import exists
-
-
-class CmdArgs(TypedDict):
-    pass
+from ...utils import exists, Kwargs
 
 
 class Command(BaseCommand):
     help = 'Records the latest price points for all funds.'
 
-    def handle(self, **_: Unpack[CmdArgs]) -> None:
+    def handle(self, **_: Unpack[Kwargs]) -> None:
 
         portfolio_value = 0.0
         self.stdout.write('╔═════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501

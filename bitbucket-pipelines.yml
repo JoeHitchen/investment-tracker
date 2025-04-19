@@ -27,4 +27,37 @@ pipelines:
           - pip install -r requirements.txt
           - pip install -r requirements_testing.txt
           - pytest
+  
+  branches:
+    deploy:
+      - step: *lint
+      - step: *type
+      - step: *test
+      - step:
+          name: Build
+          services:
+            - docker
+          script:
+            - docker build -t joehitchen/sipp-tracker .
+            - docker save --output sipp-tracker.docker joehitchen/sipp-tracker
+          artifacts:
+            - sipp-tracker.docker
+  
+      - step:
+          name: Verify
+          services:
+            - docker
+          script:
+            - docker load --input sipp-tracker.docker
+            - docker run --rm joehitchen/sipp-tracker  sh -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && pip install -r requirements_testing.txt && pytest"
+  
+      - step:
+          name: Publish
+          deployment: Docker
+          services:
+            - docker
+          script:
+            - docker load --input sipp-tracker.docker
+            - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            - docker push joehitchen/sipp-tracker
 

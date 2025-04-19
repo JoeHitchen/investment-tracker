@@ -1,4 +1,5 @@
 import os
+import json
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -71,6 +72,13 @@ DATABASES = {
     },
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+
+# Task workers
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULTS')
+CELERY_BROKER_TRANSPORT_OPTIONS = json.loads(os.environ.get('CELERY_BROKER_OPTIONS', '{}'))
 
 
 # Password validation

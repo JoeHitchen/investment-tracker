@@ -1,6 +1,10 @@
-from typing import TypeVar
+from typing import TypedDict, TypeVar
 
 Obj = TypeVar('Obj')
+
+
+class Kwargs(TypedDict):
+    pass
 
 
 def exists(obj: Obj | None) -> Obj:
