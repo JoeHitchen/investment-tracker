@@ -1,10 +1,181 @@
 from datetime import date, timedelta
 
 from django.test import TestCase
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from sipp.models import Fund, Holding, PricePoint
 from sipp.utils import exists
+
+
+class Test_Fund(TestCase):
+
+    fund: Fund
+    holding_1: Holding
+    holding_2: Holding
+    other_holdings: QuerySet[Holding]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.fund = Fund.objects.create()
+        cls.holding_1 = cls.fund.holdings.create(
+            quantity=64,
+            bought_on=date(2024, 4, 6),
+            bought_at=10000,
+        )
+        cls.holding_2 = cls.fund.holdings.create(
+            quantity=32,
+            bought_on=date(2024, 4, 10),
+            bought_at=11000,
+        )
+        cls.fund.price_points.create(
+            date=date(2024, 10, 5),
+            hundredths=12000,
+        )
+        holding_ids = [cls.holding_1.id, cls.holding_2.id]
+        cls.other_holdings = cls.fund.holdings.exclude(id__in = holding_ids)
+
+
+    def test__sell__full_first_holding(self) -> None:
+        """Sells all of the first holding."""
+
+        profit_loss = self.fund.sell(quantity=64)
+        self.assertEqual(profit_loss, 12.80)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+
+    def test__sell__partial_first_holding(self) -> None:
+        """Sells part of the first holding."""
+
+        profit_loss = self.fund.sell(quantity=27)
+        self.assertEqual(profit_loss, 5.40)
+
+        self.assertEqual(self.fund.holdings.count(), 3)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 27)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+        new_holding = exists(self.other_holdings.last())
+        self.assertEqual(new_holding.quantity, 37)
+        self.assertEqual(new_holding.bought_on, self.holding_1.bought_on)
+        self.assertEqual(new_holding.bought_at, self.holding_1.bought_at)
+        self.assertIsNone(new_holding.sold_on)
+        self.assertIsNone(new_holding.sold_at)
+
+
+    def test__sell__full_both_holdings(self) -> None:
+        """Sells all of both holdings."""
+
+        profit_loss = self.fund.sell(quantity=96)
+        self.assertEqual(profit_loss, 16.00)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertEqual(self.holding_2.sold_on, timezone.now().date())
+
+
+    def test__sell__partial_second_holding(self) -> None:
+        """Sells all of the first holding and part of the second holding."""
+
+        profit_loss = self.fund.sell(quantity=71)
+        self.assertEqual(profit_loss, 13.5)
+
+        self.assertEqual(self.fund.holdings.count(), 3)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 7)
+        self.assertEqual(self.holding_2.sold_on, timezone.now().date())
+
+        new_holding = exists(self.other_holdings.last())
+        self.assertEqual(new_holding.quantity, 25)
+        self.assertEqual(new_holding.bought_on, self.holding_2.bought_on)
+        self.assertEqual(new_holding.bought_at, self.holding_2.bought_at)
+        self.assertIsNone(new_holding.sold_on)
+        self.assertIsNone(new_holding.sold_at)
+
+
+    def test__sell__oversale(self) -> None:
+        """Raises an error if the sale is for more units than are held."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.sell(quantity=128)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertIsNone(self.holding_1.sold_on)
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+
+    def test__sell__zero_quantity(self) -> None:
+        """Raises an error if the sale is for a negative number of units."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.sell(quantity=0)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertIsNone(self.holding_1.sold_on)
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+
+    def test__sell__negative_quantity(self) -> None:
+        """Raises an error if the sale is for a negative number of units."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.sell(quantity=-1)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertIsNone(self.holding_1.sold_on)
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+
+    def test__sell__yesterday(self) -> None:
+        """Records the sale of both holdings against the date provided."""
+
+        profit_loss = self.fund.sell(quantity=96, date=timezone.now().date() - timedelta(5))
+        self.assertEqual(profit_loss, 16.00)
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date() - timedelta(5))
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertEqual(self.holding_2.sold_on, timezone.now().date() - timedelta(5))
 
 
 class Test_Holding(TestCase):

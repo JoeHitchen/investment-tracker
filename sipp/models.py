@@ -19,6 +19,29 @@ class Fund(models.Model):
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'
 
+    @transaction.atomic
+    def sell(self, quantity: float, date: date | None = None) -> float:
+        """Records the sale of fund holdings on the given date, defaulting to today.
+
+        Funds are sold in age order, with the oldest holdings sold first.
+        """
+        assert quantity > 0
+        if date is None:
+            date = timezone.now().date()
+
+        profit_loss = 0.0
+        for holding in self.holdings.filter(sold_on__isnull=True).order_by('bought_on'):
+            if quantity <= holding.quantity:
+                profit_loss += holding.sell(quantity, date)
+                break
+
+            profit_loss += holding.sell(date = date)
+            quantity -= holding.quantity
+        else:
+            raise AssertionError('Attempting to sell more units than are held')
+
+        return profit_loss
+
 
 class Holding(models.Model):
 
