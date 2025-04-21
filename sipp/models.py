@@ -85,7 +85,7 @@ class Holding(models.Model):
             )
             self.quantity = quantity
 
-        assert date is None or date >= self.bought_on
+        assert date is None or (self.bought_on <= date <= timezone.now().date())
         self.sold_on = date if date else timezone.now().date()
 
         sold_price_point = self.fund.price_points.filter(date__lte=self.sold_on).last()

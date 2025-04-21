@@ -178,6 +178,22 @@ class Test_Fund(TestCase):
         self.assertEqual(self.holding_2.sold_on, timezone.now().date() - timedelta(5))
 
 
+    def test__sell__tomorrow(self) -> None:
+        """Raises an error if the sale date is in the future."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.sell(quantity=96, date=timezone.now().date() + timedelta(1))
+
+        self.assertEqual(self.fund.holdings.count(), 2)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertIsNone(self.holding_1.sold_on)
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 32)
+        self.assertIsNone(self.holding_2.sold_on)
+
+
 class Test_Holding(TestCase):
 
     fund: Fund
@@ -313,4 +329,22 @@ class Test_Holding(TestCase):
 
         self.assertEqual(self.holding.sold_on, yesterday)
         self.assertEqual(profit_loss, 1.92)
+
+
+    def test__sell__before_buy(self) -> None:
+        """Throws an error if the sale happens before the buy."""
+
+        with self.assertRaises(AssertionError):
+            self.holding.sell(date=self.holding.bought_on - timedelta(1))
+
+        self.assertIsNone(self.holding.sold_on)
+
+
+    def test__sell__tomorrow(self) -> None:
+        """Throws an error if the sale happens in the future."""
+
+        with self.assertRaises(AssertionError):
+            self.holding.sell(date=timezone.now().date() + timedelta(1))
+
+        self.assertIsNone(self.holding.sold_on)
 
