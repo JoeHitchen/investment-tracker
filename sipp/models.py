@@ -20,6 +20,46 @@ class Fund(models.Model):
         return f'{self.short_name} ({self.tag})'
 
 
+    def buy(self, quantity: float, date: date | None = None) -> float:
+        """Records the purchase of the holding on the given date, defaulting to today."""
+
+        assert quantity > 0
+        assert date is None or (date <= timezone.now().date())
+        if date is None:
+            date = timezone.now().date()
+
+        new_holding = self.holdings.create(
+            quantity=quantity,
+            bought_on=date,
+            bought_at=exists(self.price_points.filter(date__lte=date).last()).hundredths,
+        )
+        return new_holding.cost
+
+
+    @transaction.atomic
+    def sell(self, quantity: float, date: date | None = None) -> float:
+        """Records the sale of fund holdings on the given date, defaulting to today.
+
+        Funds are sold in age order, with the oldest holdings sold first.
+        """
+        assert quantity > 0
+        if date is None:
+            date = timezone.now().date()
+
+        profit_loss = 0.0
+        for holding in self.holdings.filter(sold_on__isnull=True).order_by('bought_on'):
+            if quantity <= holding.quantity:
+                profit_loss += holding.sell(quantity, date)
+                break
+
+            profit_loss += holding.sell(date = date)
+            quantity -= holding.quantity
+        else:
+            raise AssertionError('Attempting to sell more units than are held')
+
+        return profit_loss
+
+
 class Holding(models.Model):
 
     fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='holdings')
@@ -32,6 +72,13 @@ class Holding(models.Model):
 
     class Meta:
         ordering = ['fund', 'bought_on', '-quantity']
+
+
+    @cached_property
+    def cost(self) -> float:
+        """Returns the original cost of the holding, in pounds."""
+        return self.bought_at * self.quantity / 10000
+
 
     @cached_property
     def profit_loss(self) -> float:
@@ -62,7 +109,7 @@ class Holding(models.Model):
             )
             self.quantity = quantity
 
-        assert date is None or date >= self.bought_on
+        assert date is None or (self.bought_on <= date <= timezone.now().date())
         self.sold_on = date if date else timezone.now().date()
 
         sold_price_point = self.fund.price_points.filter(date__lte=self.sold_on).last()
