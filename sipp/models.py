@@ -19,6 +19,23 @@ class Fund(models.Model):
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'
 
+
+    def buy(self, quantity: float, date: date | None = None) -> float:
+        """Records the purchase of the holding on the given date, defaulting to today."""
+
+        assert quantity > 0
+        assert date is None or (date <= timezone.now().date())
+        if date is None:
+            date = timezone.now().date()
+
+        new_holding = self.holdings.create(
+            quantity=quantity,
+            bought_on=date,
+            bought_at=exists(self.price_points.filter(date__lte=date).last()).hundredths,
+        )
+        return new_holding.quantity * new_holding.bought_at / 100
+
+
     @transaction.atomic
     def sell(self, quantity: float, date: date | None = None) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.

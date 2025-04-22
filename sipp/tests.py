@@ -28,12 +28,55 @@ class Test_Fund(TestCase):
             bought_on=date(2024, 4, 10),
             bought_at=11000,
         )
-        cls.fund.price_points.create(
-            date=date(2024, 10, 5),
-            hundredths=12000,
-        )
+        cls.fund.price_points.create(date=date(2024, 4, 6), hundredths=10000)
+        cls.fund.price_points.create(date=date(2024, 4, 10), hundredths=11000)
+        cls.fund.price_points.create(date=date(2024, 10, 5), hundredths=12000)
         holding_ids = [cls.holding_1.id, cls.holding_2.id]
         cls.other_holdings = cls.fund.holdings.exclude(id__in = holding_ids)
+
+
+    def test__buy__purchase_today(self) -> None:
+        """Creates a new holding on the given date, defaulting to today."""
+
+        self.fund.buy(quantity=100)
+        self.assertEqual(self.fund.holdings.count(), 3)
+
+        new_holding = exists(self.other_holdings.last())
+        self.assertEqual(new_holding.quantity, 100)
+        self.assertEqual(new_holding.bought_on, timezone.now().date())
+        self.assertEqual(new_holding.bought_at, 12000)
+        self.assertIsNone(new_holding.sold_on)
+        self.assertIsNone(new_holding.sold_at)
+
+
+    def test__buy__purchase_historical(self) -> None:
+        """Creates a new holding on the given date, defaulting to today."""
+
+        self.fund.buy(quantity=100, date=date(2024, 7, 5))
+        self.assertEqual(self.fund.holdings.count(), 3)
+
+        new_holding = exists(self.other_holdings.last())
+        self.assertEqual(new_holding.quantity, 100)
+        self.assertEqual(new_holding.bought_on, date(2024, 7, 5))
+        self.assertEqual(new_holding.bought_at, 11000)
+        self.assertIsNone(new_holding.sold_on)
+        self.assertIsNone(new_holding.sold_at)
+
+
+    def test__buy__zero_quantity(self) -> None:
+        """Raises an error if the purchase is for zero units."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.buy(quantity=0)
+        self.assertEqual(self.fund.holdings.count(), 2)
+
+
+    def test__buy__negative_quantity(self) -> None:
+        """Raises an error if the purchase is for a negative number of units."""
+
+        with self.assertRaises(AssertionError):
+            self.fund.buy(quantity=-1)
+        self.assertEqual(self.fund.holdings.count(), 2)
 
 
     def test__sell__full_first_holding(self) -> None:
