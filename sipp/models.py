@@ -33,7 +33,7 @@ class Fund(models.Model):
             bought_on=date,
             bought_at=exists(self.price_points.filter(date__lte=date).last()).hundredths,
         )
-        return new_holding.quantity * new_holding.bought_at / 100
+        return new_holding.cost
 
 
     @transaction.atomic
@@ -72,6 +72,13 @@ class Holding(models.Model):
 
     class Meta:
         ordering = ['fund', 'bought_on', '-quantity']
+
+
+    @cached_property
+    def cost(self) -> float:
+        """Returns the original cost of the holding, in pounds."""
+        return self.bought_at * self.quantity / 10000
+
 
     @cached_property
     def profit_loss(self) -> float:

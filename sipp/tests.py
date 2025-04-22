@@ -38,7 +38,8 @@ class Test_Fund(TestCase):
     def test__buy__purchase_today(self) -> None:
         """Creates a new holding on the given date, defaulting to today."""
 
-        self.fund.buy(quantity=100)
+        cost = self.fund.buy(quantity=100)
+        self.assertEqual(cost, 120.00)
         self.assertEqual(self.fund.holdings.count(), 3)
 
         new_holding = exists(self.other_holdings.last())
@@ -52,7 +53,8 @@ class Test_Fund(TestCase):
     def test__buy__purchase_historical(self) -> None:
         """Creates a new holding on the given date, defaulting to today."""
 
-        self.fund.buy(quantity=100, date=date(2024, 7, 5))
+        cost = self.fund.buy(quantity=100, date=date(2024, 7, 5))
+        self.assertEqual(cost, 110.00)
         self.assertEqual(self.fund.holdings.count(), 3)
 
         new_holding = exists(self.other_holdings.last())
@@ -256,6 +258,12 @@ class Test_Holding(TestCase):
             date=timezone.now().date(),
             hundredths=10500,
         )
+
+
+    def test__cost(self) -> None:
+        """Returns the original cost of the holding, in pounds."""
+
+        self.assertEqual(self.holding.cost, 64.00)
 
 
     def test__profit_loss__still_held_at_profit(self) -> None:
