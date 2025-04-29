@@ -79,6 +79,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULTS')
 CELERY_BROKER_TRANSPORT_OPTIONS = json.loads(os.environ.get('CELERY_BROKER_OPTIONS', '{}'))
+CELERY_TIMEZONE = 'Europe/London'
 
 
 # Password validation
