@@ -7,6 +7,11 @@ from django.utils import timezone
 from .utils import exists
 
 
+class Portfolio(models.TextChoices):
+    SIPP = 'SIPP', 'SIPP'
+    ISA = 'ISA', 'ISA'
+
+
 class Fund(models.Model):
 
     short_name = models.CharField(max_length=255)
@@ -20,15 +25,17 @@ class Fund(models.Model):
         return f'{self.short_name} ({self.tag})'
 
 
-    def buy(self, quantity: float, date: date | None = None) -> float:
+    def buy(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
         """Records the purchase of the holding on the given date, defaulting to today."""
 
+        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
         assert quantity > 0
         assert date is None or (date <= timezone.now().date())
         if date is None:
             date = timezone.now().date()
 
         new_holding = self.holdings.create(
+            portfolio=portfolio,
             quantity=quantity,
             bought_on=date,
             bought_at=exists(self.price_points.filter(date__lte=date).last()).hundredths,
@@ -37,17 +44,19 @@ class Fund(models.Model):
 
 
     @transaction.atomic
-    def sell(self, quantity: float, date: date | None = None) -> float:
+    def sell(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.
 
         Funds are sold in age order, with the oldest holdings sold first.
         """
+        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
         assert quantity > 0
         if date is None:
             date = timezone.now().date()
 
         profit_loss = 0.0
-        for holding in self.holdings.filter(sold_on__isnull=True).order_by('bought_on'):
+        holdings = self.holdings.filter(portfolio=portfolio, sold_on__isnull=True)
+        for holding in holdings.order_by('bought_on'):
             if quantity <= holding.quantity:
                 profit_loss += holding.sell(quantity, date)
                 break
@@ -62,6 +71,7 @@ class Fund(models.Model):
 
 class Holding(models.Model):
 
+    portfolio = models.CharField(max_length=4, choices=Portfolio.choices)
     fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='holdings')
     quantity = models.FloatField()
 
