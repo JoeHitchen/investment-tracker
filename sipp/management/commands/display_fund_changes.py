@@ -47,15 +47,15 @@ class Command(BaseCommand):
             })
         funds_with_performance.sort(reverse = True, key = fund_performance)
 
-        self.stdout.write('╔════════╤════════════════════════════════╤════════════════════╗')
-        self.stdout.write('║ Growth │ Fund                           │  Change            ║')
-        self.stdout.write('╠════════╪════════════════════════════════╪════════════════════╣')
+        self.stdout.write('╔════════╤════════════════════════════════╤══════════════════════╗')
+        self.stdout.write('║ Growth │ Fund                           │  Change              ║')
+        self.stdout.write('╠════════╪════════════════════════════════╪══════════════════════╣')
         for fund_with_performance in funds_with_performance:
-            self.stdout.write('║ {:5.2f}% │ {:30} │ {:7.4f} -> {:7.4f} ║'.format(
+            self.stdout.write('║ {:5.2f}% │ {:30} │ {:8.4f} -> {:8.4f} ║'.format(
                 100 * fund_with_performance['performance'],
                 fund_with_performance['fund'].short_name,
                 fund_with_performance['first_price'].pounds,
                 fund_with_performance['latest_price'].pounds,
             ))
-        self.stdout.write('╚═════════════════════════════════════════╧════════════════════╝')
+        self.stdout.write('╚═════════════════════════════════════════╧══════════════════════╝')
 
