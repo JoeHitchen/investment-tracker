@@ -1,4 +1,6 @@
+from datetime import date
 from typing import TypedDict
+from argparse import ArgumentParser
 
 from django.core.management.base import BaseCommand
 from typing_extensions import Unpack
@@ -21,11 +23,20 @@ def fund_performance(fund_with_performance: FundWithPerformance) -> float:
 class Command(BaseCommand):
     help = 'Records the latest price points for all funds.'
 
-    def handle(self, **_: Unpack[Kwargs]) -> None:
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            'start_date',
+            nargs = '?',
+            type = date.fromisoformat,
+            default = date(2025, 4, 9),
+            help = 'The start date of the evaluation window.',
+        )
+
+    def handle(self, start_date: date, **_: Unpack[Kwargs]) -> None:
 
         funds_with_performance: list[FundWithPerformance] = []
         for fund in sipp.Fund.objects.all():
-            first_price = exists(fund.price_points.first())
+            first_price = exists(fund.price_points.filter(date__gte = start_date).first())
             latest_price = exists(fund.price_points.last())
             price_change = latest_price.hundredths - first_price.hundredths
             funds_with_performance.append({
