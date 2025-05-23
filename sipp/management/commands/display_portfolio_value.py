@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import models as db
 from typing_extensions import Unpack
 
 from ... import models as sipp
@@ -15,24 +16,36 @@ class Command(BaseCommand):
 
     def display_single_portfolio(self, portfolio: sipp.Portfolio) -> None:
 
-        portfolio_value = 0.0
-        self.stdout.write('╔═════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
-        self.stdout.write('║ Value   │ Breakdown          │ Fund                           │ Date       ║')  # noqa: E501
-        self.stdout.write('╠═════════╪════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
-        for holding in sipp.Holding.objects.filter(portfolio=portfolio, sold_on__isnull=True):
+        funds_with_holdings = sipp.Fund.objects.annotate(
+            total_quantity=db.Sum(
+                db.Case(db.When(
+                    holdings__portfolio=portfolio,
+                    holdings__sold_on__isnull=True,
+                    then='holdings__quantity',
+                )),
+                default=0.0,
+                output_field=db.FloatField(),
+            ),
+        ).filter(total_quantity__gt=0.0)
 
-            price_point = exists(holding.fund.price_points.last())
-            holding_value = holding.quantity * price_point.pounds
+        portfolio_value = 0.0
+        self.stdout.write('╔══════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
+        self.stdout.write('║  Value   │ Breakdown          │ Fund                           │ Date       ║')  # noqa: E501
+        self.stdout.write('╠══════════╪════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
+        for fund in funds_with_holdings:
+
+            price_point = exists(fund.price_points.last())
+            holding_value = fund.total_quantity * price_point.pounds
             portfolio_value += holding_value
 
-            self.stdout.write('║ £{:6.2f} │ {:6.2f} x  £{:7.4f} │ {:30} │ {} ║'.format(
+            self.stdout.write('║ £{:7.2f} │ {:6.2f} x  £{:7.4f} │ {:30} │ {} ║'.format(
                 holding_value,
-                holding.quantity,
+                fund.total_quantity,
                 price_point.pounds,
-                holding.fund.short_name,
+                fund.short_name,
                 price_point.date.isoformat(),
             ))
 
-        self.stdout.write('╚═════════╧════════════════════╧════════════════════════════════╧════════════╝')  # noqa: E501
+        self.stdout.write('╚══════════╧════════════════════╧════════════════════════════════╧════════════╝')  # noqa: E501
         self.stdout.write('Total {} Portfolio Value: £{:,.2f}'.format(portfolio, portfolio_value))
 
