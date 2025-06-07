@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TypedDict, Any
 
 from django.views.generic.base import TemplateView
 from django.db import models as db
@@ -10,8 +10,46 @@ ContextKwargs = dict[str, Any]
 ContextDict = dict[str, Any]
 
 
+class FundData(TypedDict):
+    id: int
+    name: str
+    total_cost: float
+    total_value: float
+    total_profit_loss: float
+    growth_rate: float
+    growth_aer: float
+    active_holdings: list[models.Holding]
+
+
 class IndexView(TemplateView):
     template_name = 'sipp/index.html'
+
+    @staticmethod
+    def aggregate_holdings(portfolio: models.Portfolio) -> list[FundData]:
+
+        fund_holdings: dict[models.Fund, list[models.Holding]] = {}
+        for holding in portfolio.active_holdings():
+            if holding.fund not in fund_holdings:
+                fund_holdings[holding.fund] = []
+            fund_holdings[holding.fund].append(holding)
+
+        fund_data: list[FundData] = []
+        for fund, holdings in fund_holdings.items():
+            total_cost = sum(holding.cost for holding in holdings)
+            total_value = sum(holding.value for holding in holdings)
+            fund_data.append({
+                'id': fund.id,
+                'name': fund.short_name,
+                'total_cost': total_cost,
+                'total_value': total_value,
+                'total_profit_loss': total_value - total_cost,
+                'growth_rate': 100 * (total_value - total_cost) / total_cost,
+                'growth_aer': 100 * utils.calculate_aer(holdings),
+                'active_holdings': holdings,
+            })
+
+        return fund_data
+
 
     def get_context_data(self, **kwargs: ContextKwargs) -> ContextDict:
         context = super().get_context_data(**kwargs)
@@ -64,7 +102,12 @@ class IndexView(TemplateView):
                 'growth_rate': 100 * grand_profit_loss / grand_cost,
                 'growth_aer': 100 * utils.calculate_aer(all_holdings),
             }
-            context['portfolios'].append((portfolio, cash_properties, grand_total_properties))
+            context['portfolios'].append((
+                portfolio,
+                self.aggregate_holdings(portfolio),
+                cash_properties,
+                grand_total_properties,
+            ))
 
         return context
 
