@@ -1,4 +1,5 @@
 from datetime import date
+from math import pow as power
 from typing import cast
 
 from django.db import models, transaction
@@ -156,6 +157,19 @@ class Holding(models.Model):
         Uses the sale price for closed holdings, or the latest price point for current holdings.
         """
         return self.profit_loss / self.cost * 100
+
+
+    @cached_property
+    def growth_aer(self) -> float:
+        """Returns the growth rate of the holding, as an annual equivalent rate.
+
+        Uses the sale price for closed holdings, or the latest price point for current holdings.
+        """
+
+        end_date = self.sold_on if self.sold_on else timezone.now().date()
+        profit_loss_multiplier = (1 + self.growth_rate / 100)
+
+        return 100 * (power(profit_loss_multiplier, (365 / (end_date - self.bought_on).days)) - 1)
 
 
     @transaction.atomic

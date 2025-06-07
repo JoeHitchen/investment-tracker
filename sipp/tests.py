@@ -419,6 +419,39 @@ class Test_Holding(TestCase):
         self.assertAlmostEqual(self.holding.growth_rate, -5.0)
 
 
+    def test__aer__one_year(self) -> None:
+        """Returns the annual equivalent rate of the profit or loss."""
+
+        self.holding.bought_on = timezone.now().date() - timedelta(365)
+        self.holding.save()
+
+        self.assertAlmostEqual(self.holding.profit_loss, 3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, 5.0)
+        self.assertAlmostEqual(self.holding.growth_aer, 5.0)
+
+
+    def test__aer__two_years(self) -> None:
+        """Returns the annual equivalent rate of the profit or loss."""
+
+        self.holding.bought_on = timezone.now().date() - timedelta(2 * 365)
+        self.holding.save()
+
+        self.assertAlmostEqual(self.holding.profit_loss, 3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, 5.0)
+        self.assertAlmostEqual(self.holding.growth_aer, 2.4695, places=4)
+
+
+    def test__aer__three_months(self) -> None:
+        """Returns the annual equivalent rate of the profit or loss."""
+
+        self.holding.bought_on = timezone.now().date() - timedelta(91)
+        self.holding.save()
+
+        self.assertAlmostEqual(self.holding.profit_loss, 3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, 5.0)
+        self.assertAlmostEqual(self.holding.growth_aer, 21.6158, places=4)
+
+
     def test__sell__full_sale(self) -> None:
         """Sells the entire holding today."""
 
