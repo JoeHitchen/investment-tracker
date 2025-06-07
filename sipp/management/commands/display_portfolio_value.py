@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help = 'Records the latest price points for all funds.'
 
     def handle(self, **_: Unpack[Kwargs]) -> None:
-        for portfolio in sipp.Portfolio:
+        for portfolio in sipp.Portfolio.objects.all():
             self.display_single_portfolio(portfolio)
 
 

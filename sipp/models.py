@@ -1,4 +1,5 @@
 from datetime import date
+from typing import cast
 
 from django.db import models, transaction
 from django.utils.functional import cached_property
@@ -7,9 +8,16 @@ from django.utils import timezone
 from .utils import exists
 
 
-class Portfolio(models.TextChoices):
-    SIPP = 'SIPP', 'SIPP'
-    ISA = 'ISA', 'ISA'
+class Portfolio(models.Model):
+
+    class Types(models.TextChoices):
+        SIPP = 'SIPP', 'SIPP'
+        ISA = 'ISA', 'ISA'
+
+    type = models.CharField(max_length=4, choices=Types.choices)
+
+    def __str__(self) -> str:
+        return self.type
 
 
 class Fund(models.Model):
@@ -25,10 +33,14 @@ class Fund(models.Model):
         return f'{self.short_name} ({self.tag})'
 
 
-    def buy(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
+    def buy(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
         """Records the purchase of the holding on the given date, defaulting to today."""
 
-        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
+        if type(portfolio) is str:
+            portfolio = Portfolio.objects.get(type = portfolio)
+        portfolio = cast(Portfolio, portfolio)
+        assert portfolio.type in Portfolio.Types, f'{portfolio} is not a recognised portfolio'
+
         assert quantity > 0
         assert date is None or (date <= timezone.now().date())
         if date is None:
@@ -44,12 +56,17 @@ class Fund(models.Model):
 
 
     @transaction.atomic
-    def sell(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
+    def sell(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.
 
         Funds are sold in age order, with the oldest holdings sold first.
         """
-        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
+
+        if type(portfolio) is str:
+            portfolio = Portfolio.objects.get(type = portfolio)
+        portfolio = cast(Portfolio, portfolio)
+        assert portfolio.type in Portfolio.Types, f'{portfolio} is not a recognised portfolio'
+
         assert quantity > 0
         if date is None:
             date = timezone.now().date()
@@ -71,7 +88,7 @@ class Fund(models.Model):
 
 class Holding(models.Model):
 
-    portfolio = models.CharField(max_length=4, choices=Portfolio.choices)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='holdings')
     fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='holdings')
     quantity = models.FloatField()
 
@@ -113,6 +130,7 @@ class Holding(models.Model):
         assert quantity is None or 0 < quantity <= self.quantity
         if quantity and quantity < self.quantity:
             self.fund.holdings.create(
+                portfolio=self.portfolio,
                 quantity=self.quantity - quantity,
                 bought_on=self.bought_on,
                 bought_at=self.bought_at,
