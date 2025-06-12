@@ -29,8 +29,19 @@ class Fund(models.Model):
     url = models.URLField(max_length=255)
     monitor_price = models.BooleanField(default=True)
 
+    _latest_price_points: list['PricePoint']  # Used for prefetching
+
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'
+
+
+    @cached_property
+    def latest_price_point(self) -> 'PricePoint':
+        """Returns the latest price point for the holding, using a cache if provided."""
+
+        if hasattr(self, '_latest_price_points') and len(self._latest_price_points):
+            return self._latest_price_points[0]
+        return exists(self.price_points.all().last())
 
 
     def buy(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
@@ -97,6 +108,8 @@ class Holding(models.Model):
     sold_on = models.DateField(null=True)
     sold_at = models.IntegerField(null=True)  # In hundredths of a pence
 
+    _latest_price_points: list['PricePoint']  # Used for prefetching
+
     class Meta:
         ordering = ['fund', 'bought_on', '-quantity']
 
@@ -108,16 +121,26 @@ class Holding(models.Model):
 
 
     @cached_property
+    def end_price(self) -> float:
+        """Returns the final or current price of the holding, in pounds."""
+
+        if self.sold_at:
+            end_price = self.sold_at
+        elif hasattr(self, '_latest_price_points') and len(self._latest_price_points):
+            end_price = self._latest_price_points[0].hundredths
+        else:
+            end_price = exists(self.fund.price_points.last()).hundredths
+
+        return end_price / 10000
+
+
+    @cached_property
     def profit_loss(self) -> float:
         """Returns the total profit or loss on the holding, in pounds.
 
         Uses the sale price for closed holdings, or the latest price point for current holdings.
         """
-        if self.sold_at is None:
-            end_price = exists(self.fund.price_points.last()).hundredths
-        else:
-            end_price = self.sold_at
-        return (end_price - self.bought_at) * self.quantity / 10000
+        return (self.end_price - self.bought_at / 10000) * self.quantity
 
 
     @transaction.atomic

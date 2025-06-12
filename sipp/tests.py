@@ -15,6 +15,7 @@ class Test_Fund(TestCase):
     holding_1: Holding
     holding_2: Holding
     other_holdings: QuerySet[Holding]
+    latest_price_point: PricePoint
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -35,9 +36,27 @@ class Test_Fund(TestCase):
         )
         cls.fund.price_points.create(date=date(2024, 4, 6), hundredths=10000)
         cls.fund.price_points.create(date=date(2024, 4, 10), hundredths=11000)
-        cls.fund.price_points.create(date=date(2024, 10, 5), hundredths=12000)
+        cls.latest_price_point = cls.fund.price_points.create(
+            date=date(2024, 10, 5),
+            hundredths=12000,
+        )
         holding_ids = [cls.holding_1.id, cls.holding_2.id]
         cls.other_holdings = cls.fund.holdings.exclude(id__in = holding_ids)
+
+
+    def test__latest_price__no_cache(self) -> None:
+        """Returns the latest price point for the fund directly from the database."""
+
+        self.assertEqual(self.fund.latest_price_point, self.latest_price_point)
+
+
+    def test__latest_price__with_cache(self) -> None:
+        """Uses a cached price point if available."""
+
+        cached_price_point = PricePoint()
+        self.fund._latest_price_points = [cached_price_point]
+
+        self.assertEqual(self.fund.latest_price_point, cached_price_point)
 
 
     def test__buy__purchase_today(self) -> None:
@@ -113,7 +132,7 @@ class Test_Fund(TestCase):
         """Sells all of the first holding."""
 
         profit_loss = self.fund.sell(portfolio=self.portfolio, quantity=64)
-        self.assertEqual(profit_loss, 12.80)
+        self.assertAlmostEqual(profit_loss, 12.80)
 
         self.assertEqual(self.fund.holdings.count(), 2)
         self.holding_1.refresh_from_db()
@@ -129,7 +148,7 @@ class Test_Fund(TestCase):
         """Sells part of the first holding."""
 
         profit_loss = self.fund.sell(portfolio=self.portfolio, quantity=27)
-        self.assertEqual(profit_loss, 5.40)
+        self.assertAlmostEqual(profit_loss, 5.40)
 
         self.assertEqual(self.fund.holdings.count(), 3)
         self.holding_1.refresh_from_db()
@@ -152,7 +171,7 @@ class Test_Fund(TestCase):
         """Sells all of both holdings."""
 
         profit_loss = self.fund.sell(portfolio=self.portfolio, quantity=96)
-        self.assertEqual(profit_loss, 16.00)
+        self.assertAlmostEqual(profit_loss, 16.00)
 
         self.assertEqual(self.fund.holdings.count(), 2)
         self.holding_1.refresh_from_db()
@@ -168,7 +187,7 @@ class Test_Fund(TestCase):
         """Sells all of the first holding and part of the second holding."""
 
         profit_loss = self.fund.sell(portfolio=self.portfolio, quantity=71)
-        self.assertEqual(profit_loss, 13.5)
+        self.assertAlmostEqual(profit_loss, 13.5)
 
         self.assertEqual(self.fund.holdings.count(), 3)
         self.holding_1.refresh_from_db()
@@ -243,7 +262,7 @@ class Test_Fund(TestCase):
             quantity=96,
             date=timezone.now().date() - timedelta(5),
         )
-        self.assertEqual(profit_loss, 16.00)
+        self.assertAlmostEqual(profit_loss, 16.00)
 
         self.assertEqual(self.fund.holdings.count(), 2)
         self.holding_1.refresh_from_db()
@@ -279,7 +298,7 @@ class Test_Fund(TestCase):
         """Accepts the portfolio as a case-sensitive string."""
 
         profit_loss = self.fund.sell('SIPP', quantity=64)
-        self.assertEqual(profit_loss, 12.80)
+        self.assertAlmostEqual(profit_loss, 12.80)
 
         self.assertEqual(self.fund.holdings.count(), 2)
         self.holding_1.refresh_from_db()
@@ -335,10 +354,32 @@ class Test_Holding(TestCase):
         self.assertEqual(self.holding.cost, 64.00)
 
 
+    def test__end_price__open_holding(self) -> None:
+        """Returns the latest price point for the fund, in pounds."""
+
+        self.assertEqual(self.holding.end_price, 1.05)
+
+
+    def test__end_price__closed_holding(self) -> None:
+        """Returns the sale price for the fund, in pounds."""
+
+        self.holding.sold_at = 11000
+
+        self.assertEqual(self.holding.end_price, 1.10)
+
+
+    def test__end_price__cached_price_point(self) -> None:
+        """Uses cached price points for open holdings, if available."""
+
+        self.holding._latest_price_points = [PricePoint(hundredths = 12000)]
+
+        self.assertEqual(self.holding.end_price, 1.20)
+
+
     def test__profit_loss__still_held_at_profit(self) -> None:
         """Uses the latest price point multiplied by the quantity."""
 
-        self.assertEqual(self.holding.profit_loss, 3.20)
+        self.assertAlmostEqual(self.holding.profit_loss, 3.20)
 
 
     def test__profit_loss__still_held_at_loss(self) -> None:
@@ -347,7 +388,7 @@ class Test_Holding(TestCase):
         self.latest_price.hundredths = 9500
         self.latest_price.save()
 
-        self.assertEqual(self.holding.profit_loss, -3.20)
+        self.assertAlmostEqual(self.holding.profit_loss, -3.20)
 
 
     def test__profit_loss__sold_at_profit(self) -> None:
@@ -357,7 +398,7 @@ class Test_Holding(TestCase):
         self.holding.sold_at = 10700
         self.holding.save()
 
-        self.assertEqual(self.holding.profit_loss, 4.48)
+        self.assertAlmostEqual(self.holding.profit_loss, 4.48)
 
 
     def test__profit_loss__sold_at_loss(self) -> None:
@@ -367,7 +408,7 @@ class Test_Holding(TestCase):
         self.holding.sold_at = 9500
         self.holding.save()
 
-        self.assertEqual(self.holding.profit_loss, -3.20)
+        self.assertAlmostEqual(self.holding.profit_loss, -3.20)
 
 
     def test__sell__full_sale(self) -> None:
@@ -378,7 +419,7 @@ class Test_Holding(TestCase):
         self.assertEqual(self.fund.holdings.count(), 1)
         self.assertEqual(self.holding.quantity, 64)
         self.assertEqual(self.holding.sold_on, timezone.now().date())
-        self.assertEqual(profit_loss, 3.20)
+        self.assertAlmostEqual(profit_loss, 3.20)
 
 
     def test__sell__explicit_full_sale(self) -> None:
@@ -389,7 +430,7 @@ class Test_Holding(TestCase):
         self.assertEqual(self.fund.holdings.count(), 1)
         self.assertEqual(self.holding.quantity, 64)
         self.assertEqual(self.holding.sold_on, timezone.now().date())
-        self.assertEqual(profit_loss, 3.20)
+        self.assertAlmostEqual(profit_loss, 3.20)
 
 
     def test__sell__partial_sale(self) -> None:
@@ -400,7 +441,7 @@ class Test_Holding(TestCase):
         self.assertEqual(self.fund.holdings.count(), 2)
         self.assertEqual(self.holding.quantity, 48)
         self.assertEqual(self.holding.sold_on, timezone.now().date())
-        self.assertEqual(profit_loss, 2.40)
+        self.assertAlmostEqual(profit_loss, 2.40)
 
         continuation = exists(self.fund.holdings.last())
         self.assertEqual(continuation.quantity, 16)
@@ -448,7 +489,7 @@ class Test_Holding(TestCase):
         profit_loss = self.holding.sell(date=yesterday)
 
         self.assertEqual(self.holding.sold_on, yesterday)
-        self.assertEqual(profit_loss, 1.92)
+        self.assertAlmostEqual(profit_loss, 1.92)
 
 
     def test__sell__before_buy(self) -> None:
