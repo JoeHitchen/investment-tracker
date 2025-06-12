@@ -376,39 +376,47 @@ class Test_Holding(TestCase):
         self.assertEqual(self.holding.end_price, 1.20)
 
 
-    def test__profit_loss__still_held_at_profit(self) -> None:
+    def test__value_profit_loss__still_held_at_profit(self) -> None:
         """Uses the latest price point multiplied by the quantity."""
 
+        self.assertAlmostEqual(self.holding.value, 67.20)
         self.assertAlmostEqual(self.holding.profit_loss, 3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, 5.0)
 
 
-    def test__profit_loss__still_held_at_loss(self) -> None:
+    def test__value_profit_loss__still_held_at_loss(self) -> None:
         """Uses the latest price point multiplied by the quantity."""
 
         self.latest_price.hundredths = 9500
         self.latest_price.save()
 
+        self.assertAlmostEqual(self.holding.value, 60.80)
         self.assertAlmostEqual(self.holding.profit_loss, -3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, -5.0)
 
 
-    def test__profit_loss__sold_at_profit(self) -> None:
+    def test__value_profit_loss__sold_at_profit(self) -> None:
         """Uses the sale price provided multiplied by the quantity."""
 
         self.holding.sold_on = date(2025, 4, 5)
         self.holding.sold_at = 10700
         self.holding.save()
 
+        self.assertAlmostEqual(self.holding.value, 68.48)
         self.assertAlmostEqual(self.holding.profit_loss, 4.48)
+        self.assertAlmostEqual(self.holding.growth_rate, 7.0)
 
 
-    def test__profit_loss__sold_at_loss(self) -> None:
+    def test__value_profit_loss__sold_at_loss(self) -> None:
         """Uses the sale price provided."""
 
         self.holding.sold_on = date(2025, 4, 5)
         self.holding.sold_at = 9500
         self.holding.save()
 
+        self.assertAlmostEqual(self.holding.value, 60.80)
         self.assertAlmostEqual(self.holding.profit_loss, -3.20)
+        self.assertAlmostEqual(self.holding.growth_rate, -5.0)
 
 
     def test__sell__full_sale(self) -> None:

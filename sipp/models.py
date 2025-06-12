@@ -135,12 +135,27 @@ class Holding(models.Model):
 
 
     @cached_property
+    def value(self) -> float:
+        """Returns the current or final value of the holding, in pounds."""
+        return self.end_price * self.quantity
+
+
+    @cached_property
     def profit_loss(self) -> float:
         """Returns the total profit or loss on the holding, in pounds.
 
         Uses the sale price for closed holdings, or the latest price point for current holdings.
         """
-        return (self.end_price - self.bought_at / 10000) * self.quantity
+        return self.value - self.cost
+
+
+    @cached_property
+    def growth_rate(self) -> float:
+        """Returns the growth rate of an investment as a percentage.
+
+        Uses the sale price for closed holdings, or the latest price point for current holdings.
+        """
+        return self.profit_loss / self.cost * 100
 
 
     @transaction.atomic
