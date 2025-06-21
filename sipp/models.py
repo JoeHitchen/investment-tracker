@@ -1,15 +1,81 @@
 from datetime import date
+from math import pow as power
+from typing import Iterable, cast
 
 from django.db import models, transaction
 from django.utils.functional import cached_property
 from django.utils import timezone
+import pyxirr
 
 from .utils import exists
 
 
-class Portfolio(models.TextChoices):
-    SIPP = 'SIPP', 'SIPP'
-    ISA = 'ISA', 'ISA'
+class Portfolio(models.Model):
+
+    class Types(models.TextChoices):
+        SIPP = 'SIPP', 'SIPP'
+        ISA = 'ISA', 'ISA'
+
+    type = models.CharField(max_length=4, choices=Types.choices)
+
+    _active_holdings: list['Holding']  # Used for prefetching
+    _closed_holdings: list['Holding']  # Used for prefetching
+
+    def __str__(self) -> str:
+        return self.type
+
+
+    def active_holdings(self) -> Iterable['Holding']:
+        """Returns the active holdings for the portfolio, using a cache if provided."""
+
+        if hasattr(self, '_active_holdings'):
+            return self._active_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=True)
+
+
+    def closed_holdings(self) -> Iterable['Holding']:
+        """Returns the closed holdings for the portfolio, using a cache if provided."""
+
+        if hasattr(self, '_closed_holdings'):
+            return self._closed_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=False)
+
+
+    @cached_property
+    def total_cost(self) -> float:
+        """Returns the total cost of the active holdings."""
+        return sum(holding.cost for holding in self.active_holdings())
+
+    @cached_property
+    def total_value(self) -> float:
+        """Returns the total value of the active holdings."""
+        return sum(holding.value for holding in self.active_holdings())
+
+    @cached_property
+    def total_profit_loss(self) -> float:
+        """Returns the total profit or loss of the active holdings."""
+        return self.total_value - self.total_cost
+
+    @cached_property
+    def growth_rate(self) -> float:
+        """Returns the overall growth rate of the active holdings."""
+        return 100 * self.total_profit_loss / self.total_cost
+
+    @cached_property
+    def growth_aer(self) -> float:
+        """Returns an approximate Annual Equivalent Rate (AER) for the active portfolio."""
+
+        dates = []
+        purchases = []
+        for holding in self.active_holdings():
+            dates.append(holding.bought_on)
+            purchases.append(holding.cost)
+
+        dates.append(timezone.now().date())
+        purchases.append(-self.total_value)
+        return 100 * exists(pyxirr.xirr(dates, purchases))
 
 
 class Fund(models.Model):
@@ -21,14 +87,29 @@ class Fund(models.Model):
     url = models.URLField(max_length=255)
     monitor_price = models.BooleanField(default=True)
 
+    _latest_price_points: list['PricePoint']  # Used for prefetching
+
     def __str__(self) -> str:
         return f'{self.short_name} ({self.tag})'
 
 
-    def buy(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
+    @cached_property
+    def latest_price_point(self) -> 'PricePoint':
+        """Returns the latest price point for the holding, using a cache if provided."""
+
+        if hasattr(self, '_latest_price_points') and len(self._latest_price_points):
+            return self._latest_price_points[0]
+        return exists(self.price_points.all().last())
+
+
+    def buy(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
         """Records the purchase of the holding on the given date, defaulting to today."""
 
-        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
+        if type(portfolio) is str:
+            portfolio = Portfolio.objects.get(type = portfolio)
+        portfolio = cast(Portfolio, portfolio)
+        assert portfolio.type in Portfolio.Types, f'{portfolio} is not a recognised portfolio'
+
         assert quantity > 0
         assert date is None or (date <= timezone.now().date())
         if date is None:
@@ -44,12 +125,17 @@ class Fund(models.Model):
 
 
     @transaction.atomic
-    def sell(self, portfolio: Portfolio, quantity: float, date: date | None = None) -> float:
+    def sell(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.
 
         Funds are sold in age order, with the oldest holdings sold first.
         """
-        assert portfolio in Portfolio, f'{portfolio} is not a recognised portfolio'
+
+        if type(portfolio) is str:
+            portfolio = Portfolio.objects.get(type = portfolio)
+        portfolio = cast(Portfolio, portfolio)
+        assert portfolio.type in Portfolio.Types, f'{portfolio} is not a recognised portfolio'
+
         assert quantity > 0
         if date is None:
             date = timezone.now().date()
@@ -71,7 +157,7 @@ class Fund(models.Model):
 
 class Holding(models.Model):
 
-    portfolio = models.CharField(max_length=4, choices=Portfolio.choices)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='holdings')
     fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='holdings')
     quantity = models.FloatField()
 
@@ -79,6 +165,8 @@ class Holding(models.Model):
     bought_at = models.IntegerField()  # In hundredths of a pence
     sold_on = models.DateField(null=True)
     sold_at = models.IntegerField(null=True)  # In hundredths of a pence
+
+    _latest_price_points: list['PricePoint']  # Used for prefetching
 
     class Meta:
         ordering = ['fund', 'bought_on', '-quantity']
@@ -91,16 +179,54 @@ class Holding(models.Model):
 
 
     @cached_property
+    def end_price(self) -> float:
+        """Returns the final or current price of the holding, in pounds."""
+
+        if self.sold_at:
+            end_price = self.sold_at
+        elif hasattr(self.fund, '_latest_price_points') and len(self.fund._latest_price_points):
+            end_price = self.fund._latest_price_points[0].hundredths
+        else:
+            end_price = exists(self.fund.price_points.last()).hundredths
+
+        return end_price / 10000
+
+
+    @cached_property
+    def value(self) -> float:
+        """Returns the current or final value of the holding, in pounds."""
+        return self.end_price * self.quantity
+
+
+    @cached_property
     def profit_loss(self) -> float:
         """Returns the total profit or loss on the holding, in pounds.
 
         Uses the sale price for closed holdings, or the latest price point for current holdings.
         """
-        if self.sold_at is None:
-            end_price = exists(self.fund.price_points.last()).hundredths
-        else:
-            end_price = self.sold_at
-        return (end_price - self.bought_at) * self.quantity / 10000
+        return self.value - self.cost
+
+
+    @cached_property
+    def growth_rate(self) -> float:
+        """Returns the growth rate of an investment as a percentage.
+
+        Uses the sale price for closed holdings, or the latest price point for current holdings.
+        """
+        return self.profit_loss / self.cost * 100
+
+
+    @cached_property
+    def growth_aer(self) -> float:
+        """Returns the growth rate of the holding, as an annual equivalent rate.
+
+        Uses the sale price for closed holdings, or the latest price point for current holdings.
+        """
+
+        end_date = self.sold_on if self.sold_on else timezone.now().date()
+        profit_loss_multiplier = (1 + self.growth_rate / 100)
+
+        return 100 * (power(profit_loss_multiplier, (365 / (end_date - self.bought_on).days)) - 1)
 
 
     @transaction.atomic
@@ -113,6 +239,7 @@ class Holding(models.Model):
         assert quantity is None or 0 < quantity <= self.quantity
         if quantity and quantity < self.quantity:
             self.fund.holdings.create(
+                portfolio=self.portfolio,
                 quantity=self.quantity - quantity,
                 bought_on=self.bought_on,
                 bought_at=self.bought_at,

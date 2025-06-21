@@ -3,10 +3,11 @@ from typing import TypedDict
 from argparse import ArgumentParser
 
 from django.core.management.base import BaseCommand
+from django.db import models as db
 from typing_extensions import Unpack
 
 from ... import models as sipp
-from ...utils import exists, Kwargs
+from ...utils import Kwargs
 
 
 class FundWithPerformance(TypedDict):
@@ -34,10 +35,23 @@ class Command(BaseCommand):
 
     def handle(self, start_date: date, **_: Unpack[Kwargs]) -> None:
 
+        funds_with_prefetches = sipp.Fund.objects.prefetch_related(
+            db.Prefetch(  # First prices
+                'price_points',
+                sipp.PricePoint.objects.filter(date__gte=start_date).order_by('date'),
+                to_attr='_first_price_points',
+            ),
+            db.Prefetch(  # Latest prices
+                'price_points',
+                sipp.PricePoint.objects.all().order_by('-date'),
+                to_attr='_latest_price_points',
+            ),
+        )
+
         funds_with_performance: list[FundWithPerformance] = []
-        for fund in sipp.Fund.objects.all():
-            first_price = exists(fund.price_points.filter(date__gte = start_date).first())
-            latest_price = exists(fund.price_points.last())
+        for fund in funds_with_prefetches:
+            first_price = fund._first_price_points[0]  # type: ignore  # Locally scoped prefetch
+            latest_price = fund.latest_price_point
             price_change = latest_price.hundredths - first_price.hundredths
             funds_with_performance.append({
                 'fund': fund,

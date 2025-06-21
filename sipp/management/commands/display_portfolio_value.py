@@ -3,14 +3,14 @@ from django.db import models as db
 from typing_extensions import Unpack
 
 from ... import models as sipp
-from ...utils import exists, Kwargs
+from ...utils import Kwargs
 
 
 class Command(BaseCommand):
     help = 'Records the latest price points for all funds.'
 
     def handle(self, **_: Unpack[Kwargs]) -> None:
-        for portfolio in sipp.Portfolio:
+        for portfolio in sipp.Portfolio.objects.all():
             self.display_single_portfolio(portfolio)
 
 
@@ -26,7 +26,11 @@ class Command(BaseCommand):
                 default=0.0,
                 output_field=db.FloatField(),
             ),
-        ).filter(total_quantity__gt=0.0)
+        ).prefetch_related(db.Prefetch(
+            'price_points',
+            sipp.PricePoint.objects.all().order_by('-date'),
+            to_attr='_latest_price_points',
+        )).filter(total_quantity__gt=0.0)
 
         portfolio_value = 0.0
         self.stdout.write('╔══════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
@@ -34,7 +38,7 @@ class Command(BaseCommand):
         self.stdout.write('╠══════════╪════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
         for fund in funds_with_holdings:
 
-            price_point = exists(fund.price_points.last())
+            price_point = fund.latest_price_point
             holding_value = fund.total_quantity * price_point.pounds
             portfolio_value += holding_value
 
