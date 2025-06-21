@@ -15,6 +15,7 @@ class Test_Portfolio(TestCase):
     holding_1: Holding
     holding_2: Holding
     holding_3: Holding
+    holding_4: Holding
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -52,6 +53,14 @@ class Test_Portfolio(TestCase):
             sold_on=date(2025, 4, 14),
             sold_at=12500,
         )
+        cls.holding_4 = cls.portfolio.holdings.create(
+            fund=fund_2,
+            quantity=16,
+            bought_on=date(2024, 4, 15),
+            bought_at=12100,
+            sold_on=date(2025, 4, 16),
+            sold_at=12600,
+        )
 
 
     def test__active_holdings__no_cache(self) -> None:
@@ -70,6 +79,25 @@ class Test_Portfolio(TestCase):
         self.assertEqual(
             self.portfolio.active_holdings(),
             [self.holding_1, self.holding_3],
+        )
+
+
+    def test__closed_holdings__no_cache(self) -> None:
+        """Returns the closed holdings for the portfolio."""
+
+        self.assertEqual(
+            list(self.portfolio.closed_holdings()),
+            [self.holding_3, self.holding_4],
+        )
+
+
+    def test__closed_holdings__cached(self) -> None:
+        """Returns the closed active holdings for the portfolio."""
+
+        self.portfolio._closed_holdings = [self.holding_2, self.holding_4]
+        self.assertEqual(
+            self.portfolio.closed_holdings(),
+            [self.holding_2, self.holding_4],
         )
 
 
