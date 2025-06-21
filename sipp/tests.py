@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
+from unittest.mock import patch, Mock
 
 from django.test import TestCase
 from django.db.models import QuerySet
@@ -94,6 +95,14 @@ class Test_Portfolio(TestCase):
         """Returns the growth rate of the active holdings."""
 
         self.assertAlmostEqual(self.portfolio.growth_rate, 30.00)
+
+
+    @patch('django.utils.timezone.now')
+    def test__growth_aer(self, timezone_mock: Mock) -> None:
+        """Returns an approximate Annual Equivalent Rate for the active holdings"""
+
+        timezone_mock.return_value = datetime(2025, 5, 18)
+        self.assertAlmostEqual(self.portfolio.growth_aer, 26.63, 2)
 
 
 class Test_Fund(TestCase):

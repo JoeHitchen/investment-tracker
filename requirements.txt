@@ -2,3 +2,4 @@ django < 6
 celery
 requests
 beautifulsoup4
+pyxirr
