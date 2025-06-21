@@ -22,20 +22,46 @@ class IndexView(TemplateView):
             to_attr='_latest_price_points',
         )
 
-        holding_prefetch = db.Prefetch(
-            'holdings',
-            (
-                models.Holding.objects
-                .filter(sold_on__isnull=True)
-                .select_related('fund')
-                .prefetch_related(price_point_prefetch)
+        portfolios = models.Portfolio.objects.prefetch_related(
+            db.Prefetch(
+                'holdings',
+                (
+                    models.Holding.objects
+                    .filter(sold_on__isnull=True)
+                    .select_related('fund')
+                    .prefetch_related(price_point_prefetch)
+                ),
+                to_attr = '_active_holdings',
             ),
-            to_attr = '_active_holdings',
+            db.Prefetch(
+                'holdings',
+                models.Holding.objects.filter(sold_on__isnull=False),
+                to_attr = '_closed_holdings',
+            ),
         )
 
         context['portfolios'] = []
-        for portfolio in models.Portfolio.objects.all().prefetch_related(holding_prefetch):
-            context['portfolios'].append(portfolio)
+        for portfolio in portfolios:
+
+            cash_cost = sum(holding.cost for holding in portfolio.closed_holdings())
+            cash_value = sum(holding.value for holding in portfolio.closed_holdings())
+            cash_profit_loss = cash_value - cash_cost
+            cash_properties = {
+                'cost': cash_cost,
+                'value': cash_value,
+                'profit_loss': cash_profit_loss,
+                'growth_rate': 100 * cash_profit_loss / (cash_cost or 1),
+            }
+
+            grand_cost = portfolio.total_cost + cash_properties['cost']
+            grand_profit_loss = portfolio.total_profit_loss + cash_properties['profit_loss']
+            grand_total_properties = {
+                'cost': grand_cost,
+                'value': portfolio.total_value + cash_properties['value'],
+                'profit_loss': grand_profit_loss,
+                'growth_rate': 100 * grand_profit_loss / grand_cost,
+            }
+            context['portfolios'].append((portfolio, cash_properties, grand_total_properties))
 
         return context
 

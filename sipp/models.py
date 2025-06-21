@@ -19,17 +19,29 @@ class Portfolio(models.Model):
     type = models.CharField(max_length=4, choices=Types.choices)
 
     _active_holdings: list['Holding']  # Used for prefetching
+    _closed_holdings: list['Holding']  # Used for prefetching
 
     def __str__(self) -> str:
         return self.type
 
+
     def active_holdings(self) -> Iterable['Holding']:
         """Returns the active holdings for the portfolio, using a cache if provided."""
 
-        if hasattr(self, '_active_holdings') and len(self._active_holdings):
+        if hasattr(self, '_active_holdings'):
             return self._active_holdings
         else:
             return self.holdings.filter(sold_on__isnull=True)
+
+
+    def closed_holdings(self) -> Iterable['Holding']:
+        """Returns the closed holdings for the portfolio, using a cache if provided."""
+
+        if hasattr(self, '_closed_holdings'):
+            return self._closed_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=False)
+
 
     @cached_property
     def total_cost(self) -> float:
