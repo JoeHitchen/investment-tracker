@@ -1,6 +1,6 @@
 from datetime import date
 from math import pow as power
-from typing import cast
+from typing import Iterable, cast
 
 from django.db import models, transaction
 from django.utils.functional import cached_property
@@ -17,8 +17,38 @@ class Portfolio(models.Model):
 
     type = models.CharField(max_length=4, choices=Types.choices)
 
+    _active_holdings: list['Holding']  # Used for prefetching
+
     def __str__(self) -> str:
         return self.type
+
+    def active_holdings(self) -> Iterable['Holding']:
+        """Returns the active holdings for the portfolio, using a cache if provided."""
+
+        if hasattr(self, '_active_holdings') and len(self._active_holdings):
+            return self._active_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=True)
+
+    @cached_property
+    def total_cost(self) -> float:
+        """Returns the total cost of the active holdings."""
+        return sum(holding.cost for holding in self.active_holdings())
+
+    @cached_property
+    def total_value(self) -> float:
+        """Returns the total value of the active holdings."""
+        return sum(holding.value for holding in self.active_holdings())
+
+    @cached_property
+    def total_profit_loss(self) -> float:
+        """Returns the total profit or loss of the active holdings."""
+        return self.total_value - self.total_cost
+
+    @cached_property
+    def growth_rate(self) -> float:
+        """Returns the overall growth rate of the active holdings."""
+        return 100 * self.total_profit_loss / self.total_cost
 
 
 class Fund(models.Model):

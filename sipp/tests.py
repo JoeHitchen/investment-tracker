@@ -8,6 +8,94 @@ from sipp.models import Portfolio, Fund, Holding, PricePoint
 from sipp.utils import exists
 
 
+class Test_Portfolio(TestCase):
+
+    portfolio: Portfolio
+    holding_1: Holding
+    holding_2: Holding
+    holding_3: Holding
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.portfolio = Portfolio.objects.get(type=Portfolio.Types.SIPP)
+
+        fund_1 = Fund.objects.create()
+        cls.holding_1 = cls.portfolio.holdings.create(
+            fund=fund_1,
+            quantity=64,
+            bought_on=date(2024, 4, 6),
+            bought_at=10000,
+        )
+        fund_1.price_points.create(
+            date=date(2025, 4, 6),
+            hundredths = 13000,
+        )
+
+        fund_2 = Fund.objects.create()
+        cls.holding_2 = cls.portfolio.holdings.create(
+            fund=fund_2,
+            quantity=32,
+            bought_on=date(2024, 4, 10),
+            bought_at=11000,
+        )
+        fund_2.price_points.create(
+            date=date(2025, 4, 10),
+            hundredths = 14300,
+        )
+
+        cls.holding_3 = cls.portfolio.holdings.create(
+            fund=fund_1,
+            quantity=16,
+            bought_on=date(2024, 4, 14),
+            bought_at=12000,
+            sold_on=date(2025, 4, 14),
+            sold_at=12500,
+        )
+
+
+    def test__active_holdings__no_cache(self) -> None:
+        """Returns the active holdings for the portfolio."""
+
+        self.assertEqual(
+            list(self.portfolio.active_holdings()),
+            [self.holding_1, self.holding_2],
+        )
+
+
+    def test__active_holdings__cached(self) -> None:
+        """Returns the cached active holdings for the portfolio."""
+
+        self.portfolio._active_holdings = [self.holding_1, self.holding_3]
+        self.assertEqual(
+            self.portfolio.active_holdings(),
+            [self.holding_1, self.holding_3],
+        )
+
+
+    def test__total_cost(self) -> None:
+        """Returns the total cost of the active holdings."""
+
+        self.assertEqual(self.portfolio.total_cost, 99.20)
+
+
+    def test__total_value(self) -> None:
+        """Returns the total value of the active holdings."""
+
+        self.assertAlmostEqual(self.portfolio.total_value, 128.96)
+
+
+    def test__total_profit_loss(self) -> None:
+        """Returns the total profit or loss of the active holdings."""
+
+        self.assertAlmostEqual(self.portfolio.total_profit_loss, 29.76)
+
+
+    def test__growth_rate(self) -> None:
+        """Returns the growth rate of the active holdings."""
+
+        self.assertAlmostEqual(self.portfolio.growth_rate, 30.00)
+
+
 class Test_Fund(TestCase):
 
     portfolio: Portfolio
