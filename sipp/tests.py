@@ -468,7 +468,7 @@ class Test_Holding(TestCase):
     def test__end_price__cached_price_point(self) -> None:
         """Uses cached price points for open holdings, if available."""
 
-        self.holding._latest_price_points = [PricePoint(hundredths = 12000)]
+        self.holding.fund._latest_price_points = [PricePoint(hundredths = 12000)]
 
         self.assertEqual(self.holding.end_price, 1.20)
 

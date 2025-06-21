@@ -172,8 +172,8 @@ class Holding(models.Model):
 
         if self.sold_at:
             end_price = self.sold_at
-        elif hasattr(self, '_latest_price_points') and len(self._latest_price_points):
-            end_price = self._latest_price_points[0].hundredths
+        elif hasattr(self.fund, '_latest_price_points') and len(self.fund._latest_price_points):
+            end_price = self.fund._latest_price_points[0].hundredths
         else:
             end_price = exists(self.fund.price_points.last()).hundredths
 
