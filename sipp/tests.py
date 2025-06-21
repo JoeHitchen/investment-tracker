@@ -82,6 +82,13 @@ class Test_Portfolio(TestCase):
         )
 
 
+    def test__active_holdings__empty_cache(self) -> None:
+        """An empty cache is acceptable."""
+
+        self.portfolio._active_holdings = []
+        self.assertEqual(self.portfolio.active_holdings(), [])
+
+
     def test__closed_holdings__no_cache(self) -> None:
         """Returns the closed holdings for the portfolio."""
 
@@ -99,6 +106,13 @@ class Test_Portfolio(TestCase):
             self.portfolio.closed_holdings(),
             [self.holding_2, self.holding_4],
         )
+
+
+    def test__closed_holdings__empty_cache(self) -> None:
+        """An empty cache is acceptable."""
+
+        self.portfolio._closed_holdings = []
+        self.assertEqual(self.portfolio.closed_holdings(), [])
 
 
     def test__total_cost(self) -> None:

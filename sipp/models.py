@@ -28,7 +28,7 @@ class Portfolio(models.Model):
     def active_holdings(self) -> Iterable['Holding']:
         """Returns the active holdings for the portfolio, using a cache if provided."""
 
-        if hasattr(self, '_active_holdings') and len(self._active_holdings):
+        if hasattr(self, '_active_holdings'):
             return self._active_holdings
         else:
             return self.holdings.filter(sold_on__isnull=True)
@@ -37,7 +37,7 @@ class Portfolio(models.Model):
     def closed_holdings(self) -> Iterable['Holding']:
         """Returns the closed holdings for the portfolio, using a cache if provided."""
 
-        if hasattr(self, '_closed_holdings') and len(self._closed_holdings):
+        if hasattr(self, '_closed_holdings'):
             return self._closed_holdings
         else:
             return self.holdings.filter(sold_on__isnull=False)
