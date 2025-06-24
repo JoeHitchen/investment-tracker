@@ -5,9 +5,8 @@ from typing import Iterable, cast
 from django.db import models, transaction
 from django.utils.functional import cached_property
 from django.utils import timezone
-import pyxirr
 
-from .utils import exists
+from .utils import exists, calculate_aer
 
 
 class Portfolio(models.Model):
@@ -67,15 +66,7 @@ class Portfolio(models.Model):
     def growth_aer(self) -> float:
         """Returns an approximate Annual Equivalent Rate (AER) for the active portfolio."""
 
-        dates = []
-        purchases = []
-        for holding in self.active_holdings():
-            dates.append(holding.bought_on)
-            purchases.append(holding.cost)
-
-        dates.append(timezone.now().date())
-        purchases.append(-self.total_value)
-        return 100 * exists(pyxirr.xirr(dates, purchases))
+        return 100 * calculate_aer(self.active_holdings())
 
 
 class Fund(models.Model):

@@ -63,14 +63,14 @@
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.cost|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.profit_loss|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">-</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|floatformat:1 }}%</td>
           </tr><tr class="table-dark">
             <th{% if overall.profit_loss < 0 %} class="text-danger"{% endif %}>Grand Total</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.value|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.cost|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.profit_loss|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|floatformat:1 }}%</th>
-            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">-</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|floatformat:1 }}%</th>
           </tr>
         </tfoot>
       </table>

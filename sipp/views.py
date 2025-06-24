@@ -3,7 +3,7 @@ from typing import Any
 from django.views.generic.base import TemplateView
 from django.db import models as db
 
-from . import models
+from . import models, utils
 
 
 ContextKwargs = dict[str, Any]
@@ -51,15 +51,18 @@ class IndexView(TemplateView):
                 'value': cash_value,
                 'profit_loss': cash_profit_loss,
                 'growth_rate': 100 * cash_profit_loss / (cash_cost or 1),
+                'growth_aer': 100 * utils.calculate_aer(portfolio.closed_holdings()),
             }
 
             grand_cost = portfolio.total_cost + cash_properties['cost']
             grand_profit_loss = portfolio.total_profit_loss + cash_properties['profit_loss']
+            all_holdings = list(portfolio.closed_holdings()) + list(portfolio.active_holdings())
             grand_total_properties = {
                 'cost': grand_cost,
                 'value': portfolio.total_value + cash_properties['value'],
                 'profit_loss': grand_profit_loss,
                 'growth_rate': 100 * grand_profit_loss / grand_cost,
+                'growth_aer': 100 * utils.calculate_aer(all_holdings),
             }
             context['portfolios'].append((portfolio, cash_properties, grand_total_properties))
 
