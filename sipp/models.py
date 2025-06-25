@@ -166,7 +166,7 @@ class Holding(models.Model):
     @cached_property
     def cost(self) -> float:
         """Returns the original cost of the holding, in pounds."""
-        return self.bought_at * self.quantity / 10000
+        return round(self.bought_at * self.quantity / 10000, 2)
 
 
     @cached_property
@@ -186,7 +186,7 @@ class Holding(models.Model):
     @cached_property
     def value(self) -> float:
         """Returns the current or final value of the holding, in pounds."""
-        return self.end_price * self.quantity
+        return round(self.end_price * self.quantity, 2)
 
 
     @cached_property
