@@ -6,7 +6,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from sipp.models import Portfolio, Fund, Holding, PricePoint
-from sipp.utils import exists
+from sipp.utils import exists, calculate_aer
 
 
 class Test_Portfolio(TestCase):
@@ -688,4 +688,57 @@ class Test_Holding(TestCase):
             self.holding.sell(date=timezone.now().date() + timedelta(1))
 
         self.assertIsNone(self.holding.sold_on)
+
+
+class Test__AER(TestCase):
+
+    def test__no_holdings(self) -> None:
+        """Does not error if no holdings are supplied"""
+
+        self.assertEqual(calculate_aer([]), 0)
+
+
+    def test__various_holdings(self) -> None:
+        """Calculates an approximate AER for a variety of holdings & growth rates"""
+
+        date_ref = timezone.now().date() - timedelta(91)
+        fund = Fund.objects.create()
+        portfolio = Portfolio.objects.create()
+        fund.price_points.create(
+            date = date_ref + timedelta(91),
+            hundredths = 12500,
+        )
+
+        holdings = [
+            fund.holdings.create(
+                portfolio=portfolio,
+                quantity=1,
+                bought_on=date_ref - timedelta(365),
+                bought_at=10000,
+                sold_on=date_ref,
+                sold_at=11000,
+            ),
+            fund.holdings.create(
+                portfolio=portfolio,
+                quantity=2,
+                bought_on=date_ref - timedelta(365),
+                bought_at=10000,
+                sold_on=date_ref,
+                sold_at=15000,
+            ),
+            fund.holdings.create(
+                portfolio=portfolio,
+                quantity=5,
+                bought_on=date_ref - timedelta(182),
+                bought_at=10000,
+            ),
+            fund.holdings.create(
+                portfolio=portfolio,
+                quantity=2.5,
+                bought_on=date_ref,
+                bought_at=12000,
+            ),
+        ]
+
+        self.assertAlmostEqual(calculate_aer(holdings), 0.3414, 4)
 
