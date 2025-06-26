@@ -496,13 +496,18 @@ class Test_Holding(TestCase):
     def test__end_price__open_holding(self) -> None:
         """Returns the latest price point for the fund, in pounds."""
 
+        self.assertEqual(self.holding.latest_price_point, self.latest_price)
         self.assertEqual(self.holding.end_price, 1.05)
 
 
     def test__end_price__closed_holding(self) -> None:
         """Returns the sale price for the fund, in pounds."""
 
+        self.holding.sold_on = timezone.now().date()
         self.holding.sold_at = 11000
+
+        with self.assertRaises(AssertionError):
+            self.holding.latest_price_point
 
         self.assertEqual(self.holding.end_price, 1.10)
 
@@ -510,8 +515,10 @@ class Test_Holding(TestCase):
     def test__end_price__cached_price_point(self) -> None:
         """Uses cached price points for open holdings, if available."""
 
-        self.holding.fund._latest_price_points = [PricePoint(hundredths = 12000)]
+        price_point = PricePoint(hundredths = 12000)
+        self.holding.fund._latest_price_points = [price_point]
 
+        self.assertEqual(self.holding.latest_price_point, price_point)
         self.assertEqual(self.holding.end_price, 1.20)
 
 

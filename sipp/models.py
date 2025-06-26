@@ -170,17 +170,25 @@ class Holding(models.Model):
 
 
     @cached_property
+    def latest_price_point(self) -> 'PricePoint':
+        """Returns the latest price point for open holdings."""
+        assert not (self.sold_on or self.sold_at)
+
+        if hasattr(self.fund, '_latest_price_points') and len(self.fund._latest_price_points):
+            return self.fund._latest_price_points[0]
+
+        return exists(self.fund.price_points.last())
+
+
+    @cached_property
     def end_price(self) -> float:
         """Returns the final or current price of the holding, in pounds."""
+        return (self.sold_at if self.sold_at else self.latest_price_point.hundredths) / 10000
 
-        if self.sold_at:
-            end_price = self.sold_at
-        elif hasattr(self.fund, '_latest_price_points') and len(self.fund._latest_price_points):
-            end_price = self.fund._latest_price_points[0].hundredths
-        else:
-            end_price = exists(self.fund.price_points.last()).hundredths
-
-        return end_price / 10000
+    @cached_property
+    def end_date(self) -> date:
+        """Returns the date of the final/latest price of the holding."""
+        return self.sold_on if self.sold_on else self.latest_price_point.date
 
 
     @cached_property
