@@ -1,5 +1,4 @@
-from datetime import datetime, date, timedelta
-from unittest.mock import patch, Mock
+from datetime import date, timedelta
 
 from django.test import TestCase
 from django.db.models import QuerySet
@@ -29,7 +28,7 @@ class Test_Portfolio(TestCase):
             bought_at=10000,
         )
         fund_1.price_points.create(
-            date=date(2025, 4, 6),
+            date=date(2025, 5, 18),
             hundredths = 13000,
         )
 
@@ -41,7 +40,7 @@ class Test_Portfolio(TestCase):
             bought_at=11000,
         )
         fund_2.price_points.create(
-            date=date(2025, 4, 10),
+            date=date(2025, 5, 18),
             hundredths = 14300,
         )
 
@@ -139,11 +138,9 @@ class Test_Portfolio(TestCase):
         self.assertAlmostEqual(self.portfolio.growth_rate, 30.00)
 
 
-    @patch('django.utils.timezone.now')
-    def test__growth_aer(self, timezone_mock: Mock) -> None:
+    def test__growth_aer(self) -> None:
         """Returns an approximate Annual Equivalent Rate for the active holdings"""
 
-        timezone_mock.return_value = datetime(2025, 5, 18)
         self.assertAlmostEqual(self.portfolio.growth_aer, 26.63, 2)
 
 
@@ -708,7 +705,7 @@ class Test__AER(TestCase):
     def test__various_holdings(self) -> None:
         """Calculates an approximate AER for a variety of holdings & growth rates"""
 
-        date_ref = timezone.now().date() - timedelta(91)
+        date_ref = date.fromisoformat('2025-03-25')
         fund = Fund.objects.create()
         portfolio = Portfolio.objects.create()
         fund.price_points.create(
@@ -747,5 +744,5 @@ class Test__AER(TestCase):
             ),
         ]
 
-        self.assertAlmostEqual(calculate_aer(holdings), 0.3414, 4)
+        self.assertAlmostEqual(calculate_aer(holdings), 0.3407, 4)
 
