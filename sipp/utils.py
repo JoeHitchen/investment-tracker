@@ -1,6 +1,5 @@
 from typing import TypedDict, TypeVar, Iterable, TYPE_CHECKING
 
-from django.utils import timezone
 import pyxirr
 
 if TYPE_CHECKING:
@@ -26,14 +25,13 @@ def calculate_aer(holdings: Iterable['Holding']) -> float:
         return 0.0
 
     transactions = {}
-    today = timezone.now().date()
     for holding in holdings:
 
         if holding.bought_on not in transactions:
             transactions[holding.bought_on] = 0.0
         transactions[holding.bought_on] += holding.cost
 
-        holding_end_date = holding.sold_on if holding.sold_on else today
+        holding_end_date = holding.sold_on if holding.sold_on else holding.latest_price_point.date
         if holding_end_date not in transactions:
             transactions[holding_end_date] = 0.0
         transactions[holding_end_date] -= holding.value
