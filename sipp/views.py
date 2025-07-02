@@ -1,4 +1,5 @@
 from typing import TypedDict, Any, Callable
+from datetime import date
 
 from django.views.generic.base import TemplateView
 from django.db import models as db
@@ -15,6 +16,7 @@ SortFunc = Callable[['FundData'], int | float]
 class FundData(TypedDict):
     id: int
     name: str
+    price_date: date
     total_cost: float
     total_value: float
     total_profit_loss: float
@@ -61,6 +63,7 @@ class IndexView(TemplateView):
             fund_data.append({
                 'id': fund.id,
                 'name': fund.short_name,
+                'price_date': fund.latest_price_point.date,
                 'total_cost': total_cost,
                 'total_value': total_value,
                 'total_profit_loss': total_value - total_cost,
