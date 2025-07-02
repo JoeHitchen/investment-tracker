@@ -1,4 +1,4 @@
-from typing import TypedDict, Any
+from typing import TypedDict, Any, Callable
 
 from django.views.generic.base import TemplateView
 from django.db import models as db
@@ -8,6 +8,8 @@ from . import models, utils
 
 ContextKwargs = dict[str, Any]
 ContextDict = dict[str, Any]
+
+SortFunc = Callable[['FundData'], int | float]
 
 
 class FundData(TypedDict):
@@ -25,7 +27,26 @@ class IndexView(TemplateView):
     template_name = 'sipp/index.html'
 
     @staticmethod
-    def aggregate_holdings(portfolio: models.Portfolio) -> list[FundData]:
+    def sort_func(sort_key: str) -> SortFunc:
+
+        key = {
+            'fnd': 'id',
+            'val': 'total_value',
+            'cst': 'id',
+            'pl': 'total_profit_loss',
+            'gr': 'growth_rate',
+            'aer': 'growth_aer',
+        }.get(sort_key.strip('-'), 'id')
+
+        sign = 1 if sort_key and sort_key[0] == '-' else -1
+        if key == 'id':
+            sign *= -1
+
+        return (lambda fund: sign * fund[key])  # type: ignore
+
+
+    @staticmethod
+    def aggregate_holdings(portfolio: models.Portfolio, sort_func: SortFunc) -> list[FundData]:
 
         fund_holdings: dict[models.Fund, list[models.Holding]] = {}
         for holding in portfolio.active_holdings():
@@ -48,11 +69,12 @@ class IndexView(TemplateView):
                 'active_holdings': holdings,
             })
 
-        return fund_data
+        return sorted(fund_data, key = sort_func)
 
 
     def get_context_data(self, **kwargs: ContextKwargs) -> ContextDict:
         context = super().get_context_data(**kwargs)
+        fund_sort = self.request.GET.get('sort', '')
 
         price_point_prefetch = db.Prefetch(
             'fund__price_points',
@@ -104,7 +126,7 @@ class IndexView(TemplateView):
             }
             context['portfolios'].append((
                 portfolio,
-                self.aggregate_holdings(portfolio),
+                self.aggregate_holdings(portfolio, self.sort_func(fund_sort)),
                 cash_properties,
                 grand_total_properties,
             ))
