@@ -10,11 +10,14 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css" integrity="sha256-BJ/G+e+y7bQdrYkS2RBTyNfBHpA9IuGaPmf9htub5MQ=" crossorigin="anonymous" />
 
   <style type="text/css">
     html { font-size: 11pt }
     td[colspan="2"] { min-width: 18rem }
     td:last-child { min-width: 4.2rem }
+    .oi { padding-left: 0.5rem }
+    th:last-child span.oi { padding-left: 0.2rem }
     .nobr { white-space: nowrap }
   </style>
 </head>
@@ -32,35 +35,35 @@
           <tr>
             <th colspan="7" class="text-center">{{ portfolio }} Investment Portfolio</th>
           </tr><tr>
-            <th rowspan="2" colspan="2" class="text-center align-middle">Fund</th>
-            <th rowspan="2" class="text-center align-middle">Current Value</th>
-            <th rowspan="2" class="text-center align-middle">Purchase Price</th>
+            <th rowspan="2" colspan="2" class="text-center align-middle sort-btn" data-sort="fnd">Fund<span class="sort-icon"></span></th>
+            <th rowspan="2" class="text-center align-middle sort-btn" data-sort="val">Current Value<span class="sort-icon"></span></th>
+            <th rowspan="2" class="text-center align-middle sort-btn" data-sort="cst">Purchase Price<span class="sort-icon"></span></th>
             <th colspan="3" class="text-center">Profit/Loss</th>
           </tr><tr>
-            <th class="text-center">£</th>
-            <th class="text-center">%</th>
-            <th class="text-center">AER%</th>
+            <th class="text-center sort-btn" data-sort="pl">£<span class="sort-icon"></span></th>
+            <th class="text-center sort-btn" data-sort="gr">%<span class="sort-icon"></span></th>
+            <th class="text-center sort-btn" data-sort="aer">AER<span class="sort-icon"></span></th>
           </tr>
         </thead>
         <tbody class="table-group-divider">
           {% for fund in funds %}<tr class="fund-row" data-holdings="{{ portfolio.type|lower }}-{{ fund.id }}">
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">
               <span class="badge rounded-pill text-bg-info">{{ fund.active_holdings|length }}</span>&ensp;
-              {{ fund.name }}
+              {{ fund.name }}{{ fund.price_date|is_todays_price }}
             </td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_value|GBP }}</td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_cost|GBP }}</td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_profit_loss|GBP }}</td>
-            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_rate|percent }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_aer|percent }}</td>
           </tr>{% for holding in fund.active_holdings %}<tr class="table-light {{ portfolio.type|lower }}-{{ fund.id }} d-none">
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.bought_on|date:"d/m/Y" }}</td>
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.quantity|floatformat:4 }} units</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.value|GBP }}</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.cost|GBP }}</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.profit_loss|GBP }}</td>
-            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_rate|percent }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_aer|percent }}</td>
           </tr>{% endfor %}{% endfor %}
         </tbody>
         <tfoot class="table-group-divider">
@@ -69,22 +72,22 @@
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_value|GBP }}</th>
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_cost|GBP }}</th>
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_profit_loss|GBP }}</th>
-            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_rate|floatformat:1 }}%</th>
-            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_aer|floatformat:1 }}%</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_rate|percent }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_aer|percent }}</th>
           </tr><tr>
             <td{% if cash.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Cashed Out Holdings</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.value|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.cost|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.profit_loss|GBP }}</td>
-            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|percent }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|percent }}</td>
           </tr><tr class="table-dark">
             <th{% if overall.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Grand Total</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.value|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.cost|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.profit_loss|GBP }}</th>
-            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|floatformat:1 }}%</th>
-            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|floatformat:1 }}%</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|percent }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|percent }}</th>
           </tr>
         </tfoot>
       </table>
@@ -96,8 +99,39 @@
 
 <script type="text/javascript">
   $(document).ready(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+    $(".sort-btn").click(sortTable);
     $(".fund-row").click(toggleHoldings);
+    addSortIcon();
   });
+
+  function addSortIcon(){
+    sortKey = new URLSearchParams(window.location.search).get("sort");
+    sortReversed = (sortKey[0] === "-");
+    sortIcon = sortReversed ? "oi-arrow-bottom" : "oi-arrow-top";
+    if (sortReversed) {
+      sortKey = sortKey.slice(1);
+    }
+
+    $(".sort-btn").each((i, obj) => {
+      element = $(obj);
+      if ($(element).data("sort") === sortKey) {
+        $(element).find("span").addClass("oi").addClass(sortIcon);
+      }
+    });
+  }
+
+  function sortTable(event) {
+    let queryParams = new URLSearchParams(window.location.search);
+
+    sortKey = $(event.target).data("sort");
+    if (sortKey === undefined) {
+      sortKey = $(event.target).parent().data("sort");
+    }
+
+    sign = queryParams.get("sort") === sortKey ? '-' : '';
+    window.location.href = "?sort=" + sign + sortKey;
+  }
 
   function toggleHoldings(event) {
     fundRow = $(event.target).parents(".fund-row");
