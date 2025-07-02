@@ -54,16 +54,16 @@
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_value|GBP }}</td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_cost|GBP }}</td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_profit_loss|GBP }}</td>
-            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_rate|percent }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_aer|percent }}</td>
           </tr>{% for holding in fund.active_holdings %}<tr class="table-light {{ portfolio.type|lower }}-{{ fund.id }} d-none">
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.bought_on|date:"d/m/Y" }}</td>
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.quantity|floatformat:4 }} units</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.value|GBP }}</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.cost|GBP }}</td>
             <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.profit_loss|GBP }}</td>
-            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_rate|percent }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_aer|percent }}</td>
           </tr>{% endfor %}{% endfor %}
         </tbody>
         <tfoot class="table-group-divider">
@@ -72,22 +72,22 @@
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_value|GBP }}</th>
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_cost|GBP }}</th>
             <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_profit_loss|GBP }}</th>
-            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_rate|floatformat:1 }}%</th>
-            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_aer|floatformat:1 }}%</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_rate|percent }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_aer|percent }}</th>
           </tr><tr>
             <td{% if cash.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Cashed Out Holdings</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.value|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.cost|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.profit_loss|GBP }}</td>
-            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|floatformat:1 }}%</td>
-            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|floatformat:1 }}%</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|percent }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|percent }}</td>
           </tr><tr class="table-dark">
             <th{% if overall.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Grand Total</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.value|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.cost|GBP }}</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.profit_loss|GBP }}</th>
-            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|floatformat:1 }}%</th>
-            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|floatformat:1 }}%</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|percent }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|percent }}</th>
           </tr>
         </tfoot>
       </table>

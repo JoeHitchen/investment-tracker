@@ -17,6 +17,12 @@ def GBP(value: float) -> str:
 
 
 @register.filter
+def percent(value: float) -> str:
+    sign = '&minus;' if value < 0 else ''
+    return mark_safe(f'<span class="nobr">{sign}{abs(value):,.1f}%</span>')
+
+
+@register.filter
 def is_todays_price(price_date: date) -> str:
 
     time_shift = timedelta(
