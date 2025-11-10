@@ -1,4 +1,8 @@
+from datetime import date
+from argparse import ArgumentParser
+
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from django.db import models as db
 from typing_extensions import Unpack
 
@@ -6,20 +10,35 @@ from ... import models as sipp
 from ...utils import Kwargs
 
 
+class PortfolioKwargs(Kwargs):
+    eval_date: date
+
+
 class Command(BaseCommand):
     help = 'Records the latest price points for all funds.'
 
-    def handle(self, **_: Unpack[Kwargs]) -> None:
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            'eval_date',
+            type = date.fromisoformat,
+            nargs = '?',
+            default = str(timezone.now().date()),
+            help = 'The date of portfolio evaluation (default: today).',
+        )
+
+
+    def handle(self, **kwargs: Unpack[PortfolioKwargs]) -> None:
         for portfolio in sipp.Portfolio.objects.all():
-            self.display_single_portfolio(portfolio)
+            self.display_single_portfolio(portfolio, kwargs['eval_date'])
 
 
-    def display_single_portfolio(self, portfolio: sipp.Portfolio) -> None:
+    def display_single_portfolio(self, portfolio: sipp.Portfolio, eval_date: date) -> None:
 
         funds_with_holdings = sipp.Fund.objects.annotate(  # type: ignore
             total_quantity=db.Sum(
                 db.Case(db.When(
                     holdings__portfolio=portfolio,
+                    holdings__bought_on__lte=eval_date,
                     holdings__sold_on__isnull=True,
                     then='holdings__quantity',
                 )),
@@ -28,7 +47,7 @@ class Command(BaseCommand):
             ),
         ).prefetch_related(db.Prefetch(
             'price_points',
-            sipp.PricePoint.objects.all().order_by('-date'),
+            sipp.PricePoint.objects.filter(date__lte=eval_date).order_by('-date'),
             to_attr='_latest_price_points',
         )).filter(total_quantity__gt=0.0)
 
