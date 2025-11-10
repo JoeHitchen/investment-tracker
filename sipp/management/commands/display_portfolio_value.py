@@ -33,16 +33,16 @@ class Command(BaseCommand):
         )).filter(total_quantity__gt=0.0)
 
         portfolio_value = 0.0
-        self.stdout.write('╔══════════╤════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
-        self.stdout.write('║  Value   │ Breakdown          │ Fund                           │ Date       ║')  # noqa: E501
-        self.stdout.write('╠══════════╪════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
+        self.stdout.write('╔══════════╤══════════════════════╤════════════════════════════════╤════════════╗')  # noqa: E501
+        self.stdout.write('║  Value   │ Breakdown            │ Fund                           │ Date       ║')  # noqa: E501
+        self.stdout.write('╠══════════╪══════════════════════╪════════════════════════════════╪════════════╣')  # noqa: E501
         for fund in funds_with_holdings:
 
             price_point = fund.latest_price_point
             holding_value = fund.total_quantity * price_point.pounds
             portfolio_value += holding_value
 
-            self.stdout.write('║ £{:7.2f} │ {:6.2f} x  £{:7.4f} │ {:30} │ {} ║'.format(
+            self.stdout.write('║ £{:7.2f} │ {:7.2f} x  £{:8.4f} │ {:30} │ {} ║'.format(
                 holding_value,
                 fund.total_quantity,
                 price_point.pounds,
@@ -50,6 +50,6 @@ class Command(BaseCommand):
                 price_point.date.isoformat(),
             ))
 
-        self.stdout.write('╚══════════╧════════════════════╧════════════════════════════════╧════════════╝')  # noqa: E501
+        self.stdout.write('╚══════════╧══════════════════════╧════════════════════════════════╧════════════╝')  # noqa: E501
         self.stdout.write('Total {} Portfolio Value: £{:,.2f}'.format(portfolio, portfolio_value))
 
