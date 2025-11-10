@@ -15,7 +15,7 @@ class PortfolioKwargs(Kwargs):
 
 
 class Command(BaseCommand):
-    help = 'Records the latest price points for all funds.'
+    help = 'Displays the valuation of the portfolio.'
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
