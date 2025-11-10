@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
     def handle(self, start_date: date, **_: Unpack[Kwargs]) -> None:
 
-        funds_with_prefetches = sipp.Fund.objects.prefetch_related(
+        funds_with_prefetches = sipp.Fund.objects.prefetch_related(  # type: ignore
             db.Prefetch(  # First prices
                 'price_points',
                 sipp.PricePoint.objects.filter(date__gte=start_date).order_by('date'),
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
         funds_with_performance: list[FundWithPerformance] = []
         for fund in funds_with_prefetches:
-            first_price = fund._first_price_points[0]  # type: ignore  # Locally scoped prefetch
+            first_price = fund._first_price_points[0]
             latest_price = fund.latest_price_point
             price_change = latest_price.hundredths - first_price.hundredths
             funds_with_performance.append({

@@ -85,11 +85,11 @@ class IndexView(TemplateView):
             to_attr='_latest_price_points',
         )
 
-        portfolios = models.Portfolio.objects.prefetch_related(
+        portfolios = models.Portfolio.objects.prefetch_related(  # type: ignore
             db.Prefetch(
                 'holdings',
                 (
-                    models.Holding.objects
+                    models.Holding.objects  # type: ignore
                     .filter(sold_on__isnull=True)
                     .select_related('fund')
                     .prefetch_related(price_point_prefetch)

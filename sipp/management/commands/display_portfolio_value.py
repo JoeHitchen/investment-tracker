@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     def display_single_portfolio(self, portfolio: sipp.Portfolio) -> None:
 
-        funds_with_holdings = sipp.Fund.objects.annotate(
+        funds_with_holdings = sipp.Fund.objects.annotate(  # type: ignore
             total_quantity=db.Sum(
                 db.Case(db.When(
                     holdings__portfolio=portfolio,
