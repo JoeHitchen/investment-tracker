@@ -1,0 +1,71 @@
+{% extends 'sipp/base.html' %}
+
+
+{% block head_scripts %}
+  <script src="https://code.highcharts.com/stock/highstock.js"></script>
+{% endblock %}
+
+
+{% block page_content %}
+  <div class="col">
+    <div class="card mb-3">
+      <div class="card-header text-center text-white bg-dark d-flex justify-content-between">
+        <a href="{% url 'sipp:index' %}" class="bi bi-arrow-left-square-fill"></a>
+        <strong>{{ portfolio }} Investment Portfolio</strong>
+        <i class="bi bi-arrow-right-square-fill text-dark"></i>
+      </div>
+      <div class="card-body">
+        <figure class="highcharts-figure">
+          <div id="chart-container" style="height: 83vh"></div>
+        </figure>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block post_script %}<script type="text/javascript">
+  Highcharts.chart('chart-container', {
+    chart: { type: 'area', zoomType: 'x' },
+    title: { text: undefined },
+    series: [{% for fund in fund_data %}{
+      name: '{{ fund.fund_name }}',
+      data: {{ fund.price_points|safe }}
+    }{% if not forloop.last %}, {% endif %}{% endfor %}],
+    plotOptions: {
+      area: {
+        stacking: 'normal',
+        lineColor: '#666666',
+        lineWidth: 1,
+        marker: { enabled: false }
+      }
+    },
+    tooltip: {
+      shared: true,
+      headerFormat: '<span style="font-size:12px"><b>{point.key}</b></span><br>'
+    },
+    xAxis: {
+      type: 'datetime',
+      min: '{{ start_date.isoformat }}',
+      max: '{{ end_date.isoformat }}'
+    },
+    yAxis: {
+      title: {
+        text: 'Portfolio value    £',
+        style: { fontSize: '1.25rem' },
+      },
+    },
+    navigator: {
+      enabled: true,
+      maskFill: 'rgba(127, 127, 127, 0.2)',
+      series: {
+        data: {{ portfolio_values|safe }}
+      },
+      xAxis: {
+        min: '{{ start_date.isoformat }}',
+        max: '{{ end_date.isoformat }}'
+      },
+      yAxis: { min: 0 }
+    }
+  });
+</script>{% endblock %}
+

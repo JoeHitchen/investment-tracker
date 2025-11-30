@@ -1,10 +1,19 @@
-from typing import TypedDict, Any, Callable
-from datetime import date
+from typing import TypedDict, Any, Callable, TYPE_CHECKING
+from datetime import date, timedelta
 
 from django.views.generic.base import TemplateView
+from django.views.generic.detail import DetailView
 from django.db import models as db
 
 from . import models, utils
+
+
+if TYPE_CHECKING:
+    PortfolioView = DetailView[models.Portfolio]
+    PortfolioQuerySet = db.QuerySet[models.Portfolio]
+else:
+    PortfolioView = DetailView
+    PortfolioQuerySet = db.QuerySet
 
 
 ContextKwargs = dict[str, Any]
@@ -134,5 +143,87 @@ class IndexView(TemplateView):
                 grand_total_properties,
             ))
 
+        return context
+
+
+class PortfolioGraphView(PortfolioView):
+    template_name = 'sipp/portfolio-graphs.html'
+    model = models.Portfolio
+
+    def get_object(self, queryset: PortfolioQuerySet | None = None) -> models.Portfolio:
+        return self.model.objects.get(type = self.kwargs['portfolio'])
+
+    @staticmethod
+    def _get_fund_price_data(fund: models.Fund, days: list[date]) -> dict[date, float]:
+
+        fund_prices = dict.fromkeys(days, 0.0)
+        for price_point in fund.price_points.filter(date__gte = days[0]):
+            fund_prices[price_point.date] = price_point.pounds
+
+        prev_price = 0.0
+        for day, price in fund_prices.items():
+            if not price:
+                fund_prices[day] = prev_price
+                continue
+            prev_price = price
+
+        prev_price = 0.0
+        for day, price in list(fund_prices.items())[::-1]:
+            if not price:
+                fund_prices[day] = prev_price
+                continue
+            prev_price = price
+
+        return fund_prices
+
+
+    def get_context_data(self, **kwargs: ContextKwargs) -> ContextDict:
+        context = super().get_context_data(**kwargs)
+
+        context['start_date'] = {
+            models.Portfolio.Types.SIPP: date(2025, 4, 10),
+            models.Portfolio.Types.ISA: date(2025, 5, 2),
+        }[context['portfolio'].type]
+
+        context['end_date'] = date.today()
+        all_days = [
+            context['start_date'] + timedelta(i)
+            for i in range(0, (context['end_date'] - context['start_date']).days + 1)
+        ]
+
+        context['fund_data'] = []
+        portfolio_values = dict.fromkeys(all_days, 0.0)
+        for fund in list(models.Fund.objects.all())[::-1]:
+
+            holdings = list(fund.holdings.filter(portfolio = context['portfolio']))
+            if not len(holdings):
+                continue
+
+            units_held = dict.fromkeys(all_days, 0.0)
+            for holding in holdings:
+                holding_end = holding.sold_on or (date.today() + timedelta(1))
+                for i in range(0, (holding_end - holding.bought_on).days):
+                    units_held[holding.bought_on + timedelta(i)] += holding.quantity
+
+            fund_prices = self._get_fund_price_data(fund, list(units_held.keys()))
+            fund_values = {
+                day: round(units * fund_prices[day], 2)
+                for day, units in units_held.items()
+            }
+            for day, value in fund_values.items():
+                portfolio_values[day] += value
+
+            context['fund_data'].append({
+                'fund_name': fund.short_name,
+                'price_points': [{
+                    'x': day.isoformat(),
+                    'y': value,
+                } for day, value in fund_values.items()],
+            })
+
+        context['portfolio_values'] = [{
+            'x': day.isoformat(),
+            'y': value,
+        } for day, value in portfolio_values.items()]
         return context
 
