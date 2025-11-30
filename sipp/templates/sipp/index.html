@@ -86,7 +86,7 @@
   function addSortIcon(){
     sortKey = new URLSearchParams(window.location.search).get("sort");
     sortReversed = (sortKey[0] === "-");
-    sortIcon = sortReversed ? "oi-arrow-bottom" : "oi-arrow-top";
+    sortIcon = sortReversed ? "bi-chevron-double-down" : "bi-chevron-double-up";
     if (sortReversed) {
       sortKey = sortKey.slice(1);
     }
@@ -94,7 +94,7 @@
     $(".sort-btn").each((i, obj) => {
       element = $(obj);
       if ($(element).data("sort") === sortKey) {
-        $(element).find("span").addClass("oi").addClass(sortIcon);
+        $(element).find("span").addClass("bi").addClass(sortIcon);
       }
     });
   }
