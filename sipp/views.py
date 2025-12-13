@@ -223,7 +223,7 @@ class PortfolioGraphView(PortfolioView):
 
         context['portfolio_values'] = [{
             'x': day.isoformat(),
-            'y': value,
+            'y': round(value, 2),
         } for day, value in portfolio_values.items()]
         return context
 

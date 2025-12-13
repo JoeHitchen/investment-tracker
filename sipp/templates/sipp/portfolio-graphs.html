@@ -27,11 +27,23 @@
   Highcharts.chart('chart-container', {
     chart: { type: 'area', zoomType: 'x' },
     title: { text: undefined },
-    series: [{% for fund in fund_data %}{
+    series: [{
+      type: 'line',
+      name: 'Total',
+      data: {{ portfolio_values|safe }},
+      tooltip: { pointFormat: '<span style="font-size:12px"><b>Portfolio Total: £{y}</b></span><br>' },
+      color: '#000000',
+      zIndex: 10
+    }, {% for fund in fund_data %}{
+      type: 'area',
       name: '{{ fund.fund_name }}',
       data: {{ fund.price_points|safe }}
     }{% if not forloop.last %}, {% endif %}{% endfor %}],
     plotOptions: {
+      line: {
+        lineWidth: 3,
+        marker: { enabled: false }
+      },
       area: {
         stacking: 'normal',
         lineColor: '#666666',
@@ -58,13 +70,13 @@
       enabled: true,
       maskFill: 'rgba(127, 127, 127, 0.2)',
       series: {
-        data: {{ portfolio_values|safe }}
+        data: {{ portfolio_values|safe }},
+        color: '#2caffe'
       },
       xAxis: {
         min: '{{ start_date.isoformat }}',
         max: '{{ end_date.isoformat }}'
-      },
-      yAxis: { min: 0 }
+      }
     }
   });
 </script>{% endblock %}
