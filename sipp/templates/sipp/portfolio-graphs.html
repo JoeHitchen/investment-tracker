@@ -12,7 +12,7 @@
       <div class="card-header text-center text-white bg-dark d-flex justify-content-between">
         <a href="{% url 'sipp:index' %}" class="bi bi-arrow-left-square-fill"></a>
         <strong>{{ portfolio }} Investment Portfolio</strong>
-        <i class="bi bi-arrow-right-square-fill text-dark"></i>
+        <a href="{% if profit_loss %}{% url 'sipp:graph-total-value' portfolio|lower %}{% else %}{% url 'sipp:graph-profit-loss' portfolio|lower %}{% endif %}" class="bi bi-repeat"></a>
       </div>
       <div class="card-body">
         <figure class="highcharts-figure">
@@ -62,7 +62,7 @@
     },
     yAxis: {
       title: {
-        text: 'Portfolio value    £',
+        text: '{% if profit_loss %}Profit/Loss{% else %}Portfolio Value{% endif %}, £',
         style: { fontSize: '1.25rem' },
       },
     },

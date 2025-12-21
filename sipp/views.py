@@ -176,14 +176,27 @@ class PortfolioGraphView(PortfolioView):
 
         return fund_prices
 
+    @staticmethod
+    def _calculate_fund_value(units: float, price: float, _: float) -> float:
+        return units * price
+
+    @staticmethod
+    def _calculate_fund_profit_loss(units: float, price: float, costs: float) -> float:
+        return units * price - costs
 
     def get_context_data(self, **kwargs: ContextKwargs) -> ContextDict:
         context = super().get_context_data(**kwargs)
+        context['profit_loss'] = context['view'].kwargs['profit_loss']
 
         context['start_date'] = {
             models.Portfolio.Types.SIPP: date(2025, 4, 10),
             models.Portfolio.Types.ISA: date(2025, 5, 2),
         }[context['portfolio'].type]
+
+        graph_data_func = {
+            False: self._calculate_fund_value,
+            True: self._calculate_fund_profit_loss,
+        }[context['profit_loss']]
 
         context['end_date'] = date.today()
         all_days = [
@@ -199,15 +212,17 @@ class PortfolioGraphView(PortfolioView):
             if not len(holdings):
                 continue
 
+            costs = dict.fromkeys(all_days, 0.0)
             units_held = dict.fromkeys(all_days, 0.0)
             for holding in holdings:
                 holding_end = holding.sold_on or (date.today() + timedelta(1))
                 for i in range(0, (holding_end - holding.bought_on).days):
+                    costs[holding.bought_on + timedelta(i)] += holding.cost
                     units_held[holding.bought_on + timedelta(i)] += holding.quantity
 
             fund_prices = self._get_fund_price_data(fund, list(units_held.keys()))
             fund_values = {
-                day: round(units * fund_prices[day], 2)
+                day: round(graph_data_func(units, fund_prices[day], costs[day]), 2)
                 for day, units in units_held.items()
             }
             for day, value in fund_values.items():
