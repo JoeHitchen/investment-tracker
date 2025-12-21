@@ -1,10 +1,16 @@
 from datetime import datetime, date, time, timedelta
+from typing import TypedDict
 
 from django import template
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.timesince import timesince
+
+
+class TimeSeriesPoint(TypedDict):
+    x: str
+    y: float
 
 
 register = template.Library()
@@ -36,4 +42,12 @@ def is_todays_price(price_date: date) -> str:
         '&nbsp;<span data-toggle="tooltip" title="Price last updated {} ago">🕔</span>',
         timesince(timezone.make_aware(datetime.combine(price_date, time(17, 00)))),
     )
+
+
+@register.filter
+def format_timeseries(data: list[tuple[date, float]]) -> list[TimeSeriesPoint]:
+    return [
+        {'x': day.isoformat(), 'y': round(value, 2)}
+        for day, value in data if day.weekday() < 5
+    ]
 

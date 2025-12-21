@@ -1,4 +1,5 @@
 {% extends 'sipp/base.html' %}
+{% load sipp_tags %}
 
 
 {% block head_scripts %}
@@ -30,14 +31,14 @@
     series: [{
       type: 'line',
       name: 'Total',
-      data: {{ portfolio_values|safe }},
+      data: {{ portfolio_values|format_timeseries|safe }},
       tooltip: { pointFormat: '<span style="font-size:12px"><b>Portfolio Total: £{y}</b></span><br>' },
       color: '#000000',
       zIndex: 10
     }, {% for fund in fund_data %}{
       type: 'area',
       name: '{{ fund.fund_name }}',
-      data: {{ fund.price_points|safe }}
+      data: {{ fund.price_points|format_timeseries|safe }}
     }{% if not forloop.last %}, {% endif %}{% endfor %}],
     plotOptions: {
       line: {
@@ -70,7 +71,7 @@
       enabled: true,
       maskFill: 'rgba(127, 127, 127, 0.2)',
       series: {
-        data: {{ portfolio_values|safe }},
+        data: {{ portfolio_values|format_timeseries|safe }},
         color: '#2caffe'
       },
       xAxis: {

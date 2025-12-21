@@ -230,15 +230,9 @@ class PortfolioGraphView(PortfolioView):
 
             context['fund_data'].append({
                 'fund_name': fund.short_name,
-                'price_points': [{
-                    'x': day.isoformat(),
-                    'y': value,
-                } for day, value in fund_values.items()],
+                'price_points': fund_values.items(),
             })
 
-        context['portfolio_values'] = [{
-            'x': day.isoformat(),
-            'y': round(value, 2),
-        } for day, value in portfolio_values.items()]
+        context['portfolio_values'] = portfolio_values.items()
         return context
 
