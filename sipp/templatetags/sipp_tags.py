@@ -45,6 +45,11 @@ def is_todays_price(price_date: date) -> str:
 
 
 @register.filter
+def is_green_fund(green: bool) -> str:
+    return '🌳' if green else ''
+
+
+@register.filter
 def format_timeseries(data: list[tuple[date, float]]) -> list[TimeSeriesPoint]:
     return [
         {'x': day.isoformat(), 'y': round(value, 2)}

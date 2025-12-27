@@ -71,9 +71,26 @@ class Portfolio(models.Model):
 
 class Fund(models.Model):
 
+    class Type(models.TextChoices):
+        ACC = 'ACC', 'Accumulation'
+        INC = 'INC', 'Income'
+
+    class Region(models.TextChoices):
+        UK = 'UK', 'United Kingdom'
+        EU = 'EU', 'Europe'
+        NA = 'NA', 'North America'
+        APAC = 'APAC', 'Asia Pacific'
+        LATIN = 'LAM', 'Latin America'
+        EMERGE = 'EMG', 'Emerging Markets'
+        GLOBAL = 'GLB', 'Global'
+
     short_name = models.CharField(max_length=255)
     full_name = models.TextField(max_length=255)
     tag = models.CharField(max_length=255)
+
+    type = models.CharField(max_length=3, choices=Type.choices)
+    region = models.CharField(max_length=4, choices=Region.choices)
+    green = models.BooleanField(default=False)
 
     url = models.URLField(max_length=255)
     monitor_price = models.BooleanField(default=True)

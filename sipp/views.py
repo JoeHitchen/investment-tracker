@@ -31,6 +31,7 @@ class FundData(TypedDict):
     total_profit_loss: float
     growth_rate: float
     growth_aer: float
+    green: bool
     active_holdings: list[models.Holding]
 
 
@@ -79,6 +80,7 @@ class IndexView(TemplateView):
                 'growth_rate': 100 * (total_value - total_cost) / total_cost,
                 'growth_aer': 100 * utils.calculate_aer(holdings),
                 'active_holdings': holdings,
+                'green': fund.green,
             })
 
         return sorted(fund_data, key = sort_func)

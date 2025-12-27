@@ -28,7 +28,7 @@
           {% for fund in funds %}<tr class="fund-row" data-holdings="{{ portfolio.type|lower }}-{{ fund.id }}">
             <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">
               <span class="badge rounded-pill text-bg-info">{{ fund.active_holdings|length }}</span>&ensp;
-              {{ fund.name }}{{ fund.price_date|is_todays_price }}
+              {{ fund.name }}{{ fund.green|is_green_fund }}{{ fund.price_date|is_todays_price }}
             </td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_value|GBP }}</td>
             <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_cost|GBP }}</td>
