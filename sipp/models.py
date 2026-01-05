@@ -240,9 +240,10 @@ class Holding(models.Model):
         """
 
         end_date = self.sold_on if self.sold_on else timezone.now().date()
+        number_of_days = (end_date - self.bought_on).days or 1
         profit_loss_multiplier = (1 + self.growth_rate / 100)
 
-        return 100 * (power(profit_loss_multiplier, (365 / (end_date - self.bought_on).days)) - 1)
+        return 100 * (power(profit_loss_multiplier, (365 / number_of_days)) - 1)
 
 
     @transaction.atomic
