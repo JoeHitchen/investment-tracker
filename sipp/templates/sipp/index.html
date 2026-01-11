@@ -3,7 +3,7 @@
 
 
 {% block page_content %}
-  {% for portfolio, funds, cash, overall in portfolios %}<div class="col">
+  {% for portfolio, funds, cash, reinvest, overall in portfolios %}<div class="col">
     <div class="card mb-3" style="overflow:hidden"><div class="table-responsive">
       <table class="table table-small table-hover mb-0">
         <thead class="table-dark">
@@ -60,6 +60,13 @@
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.profit_loss|GBP }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|percent }}</td>
             <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|percent }}</td>
+          </tr><tr>
+            <td{% if reinvest.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Reinvested Holdings</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% else %} text-secondary{% endif %}">({{ reinvest.value|GBP }})</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% else %} text-secondary{% endif %}">({{ reinvest.cost|GBP }})</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.profit_loss|GBP }}</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.growth_rate|percent }}</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.growth_aer|percent }}</td>
           </tr><tr class="table-dark">
             <th{% if overall.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Grand Total</th>
             <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.value|GBP }}</th>

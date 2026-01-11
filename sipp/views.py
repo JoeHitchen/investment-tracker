@@ -109,8 +109,13 @@ class IndexView(TemplateView):
             ),
             db.Prefetch(
                 'holdings',
-                models.Holding.objects.filter(sold_on__isnull=False),
+                models.Holding.objects.filter(sold_on__isnull=False, reinvested = False),
                 to_attr = '_closed_holdings',
+            ),
+            db.Prefetch(
+                'holdings',
+                models.Holding.objects.filter(sold_on__isnull=False, reinvested = True),
+                to_attr = '_reinvested_holdings',
             ),
         )
 
@@ -128,20 +133,39 @@ class IndexView(TemplateView):
                 'growth_aer': 100 * utils.calculate_aer(portfolio.closed_holdings()),
             }
 
+            reinvest_cost = sum(holding.cost for holding in portfolio.reinvested_holdings())
+            reinvest_value = sum(holding.value for holding in portfolio.reinvested_holdings())
+            reinvest_profit_loss = reinvest_value - reinvest_cost
+            reinvest_properties = {
+                'cost': reinvest_cost,
+                'value': reinvest_value,
+                'profit_loss': reinvest_profit_loss,
+                'growth_rate': 100 * reinvest_profit_loss / (reinvest_cost or 1),
+                'growth_aer': 100 * utils.calculate_aer(portfolio.reinvested_holdings()),
+            }
+
             grand_cost = portfolio.total_cost + cash_properties['cost']
-            grand_profit_loss = portfolio.total_profit_loss + cash_properties['profit_loss']
-            all_holdings = list(portfolio.closed_holdings()) + list(portfolio.active_holdings())
+            grand_profit_loss = (
+                portfolio.total_profit_loss
+                + cash_properties['profit_loss']
+                + reinvest_properties['profit_loss']
+            )
             grand_total_properties = {
                 'cost': grand_cost,
                 'value': portfolio.total_value + cash_properties['value'],
                 'profit_loss': grand_profit_loss,
                 'growth_rate': 100 * grand_profit_loss / grand_cost,
-                'growth_aer': 100 * utils.calculate_aer(all_holdings),
+                'growth_aer': 100 * utils.calculate_aer(
+                    list(portfolio.closed_holdings())
+                    + list(portfolio.reinvested_holdings())
+                    + list(portfolio.active_holdings()),
+                ),
             }
             context['portfolios'].append((
                 portfolio,
                 self.aggregate_holdings(portfolio, self.sort_func(fund_sort)),
                 cash_properties,
+                reinvest_properties,
                 grand_total_properties,
             ))
 

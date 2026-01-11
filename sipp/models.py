@@ -19,13 +19,16 @@ class Portfolio(models.Model):
 
     _active_holdings: list['Holding']  # Used for prefetching
     _closed_holdings: list['Holding']  # Used for prefetching
+    _reinvested_holdings: list['Holding']  # Used for prefetching
 
     def __str__(self) -> str:
         return self.type
 
 
     def active_holdings(self) -> Iterable['Holding']:
-        """Returns the active holdings for the portfolio, using a cache if provided."""
+        """Returns the active holdings for this portfolio.
+
+        Uses the property '_active_holdings' as a cache if available."""
 
         if hasattr(self, '_active_holdings'):
             return self._active_holdings
@@ -34,12 +37,25 @@ class Portfolio(models.Model):
 
 
     def closed_holdings(self) -> Iterable['Holding']:
-        """Returns the closed holdings for the portfolio, using a cache if provided."""
+        """Returns the closed holdings for this portfolio that _have not_ been reinvested.
+
+        Uses the property '_closed_holdings' as a cache if available."""
 
         if hasattr(self, '_closed_holdings'):
             return self._closed_holdings
         else:
-            return self.holdings.filter(sold_on__isnull=False)
+            return self.holdings.filter(sold_on__isnull=False, reinvested=False)
+
+
+    def reinvested_holdings(self) -> Iterable['Holding']:
+        """Returns the closed holdings for this portfolio that _have_ been reinvested.
+
+        Uses the property '_reinvested_holdings' as a cache if available."""
+
+        if hasattr(self, '_reinvested_holdings'):
+            return self._reinvested_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=False, reinvested=True)
 
 
     @cached_property
@@ -173,6 +189,8 @@ class Holding(models.Model):
     bought_at = models.IntegerField()  # In hundredths of a pence
     sold_on = models.DateField(null=True)
     sold_at = models.IntegerField(null=True)  # In hundredths of a pence
+
+    reinvested = models.BooleanField(default=False)
 
     _latest_price_points: list['PricePoint']  # Used for prefetching
 
