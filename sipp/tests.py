@@ -274,6 +274,7 @@ class Test_Fund(TestCase):
         self.holding_1.refresh_from_db()
         self.assertEqual(self.holding_1.quantity, 64)
         self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_1.reinvested)
 
         self.holding_2.refresh_from_db()
         self.assertEqual(self.holding_2.quantity, 32)
@@ -290,6 +291,7 @@ class Test_Fund(TestCase):
         self.holding_1.refresh_from_db()
         self.assertEqual(self.holding_1.quantity, 27)
         self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_1.reinvested)
 
         self.holding_2.refresh_from_db()
         self.assertEqual(self.holding_2.quantity, 32)
@@ -313,10 +315,12 @@ class Test_Fund(TestCase):
         self.holding_1.refresh_from_db()
         self.assertEqual(self.holding_1.quantity, 64)
         self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_1.reinvested)
 
         self.holding_2.refresh_from_db()
         self.assertEqual(self.holding_2.quantity, 32)
         self.assertEqual(self.holding_2.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_2.reinvested)
 
 
     def test__sell__partial_second_holding(self) -> None:
@@ -329,10 +333,12 @@ class Test_Fund(TestCase):
         self.holding_1.refresh_from_db()
         self.assertEqual(self.holding_1.quantity, 64)
         self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_1.reinvested)
 
         self.holding_2.refresh_from_db()
         self.assertEqual(self.holding_2.quantity, 7)
         self.assertEqual(self.holding_2.sold_on, timezone.now().date())
+        self.assertFalse(self.holding_2.reinvested)
 
         new_holding = exists(self.other_holdings.last())
         self.assertEqual(new_holding.quantity, 25)
@@ -428,6 +434,32 @@ class Test_Fund(TestCase):
         self.holding_2.refresh_from_db()
         self.assertEqual(self.holding_2.quantity, 32)
         self.assertIsNone(self.holding_2.sold_on)
+
+
+    def test__sell__reinvested(self) -> None:
+        """Propagates the 'reinvested' flag to all sold holdings, but not new holdings."""
+
+        profit_loss = self.fund.sell(portfolio=self.portfolio, quantity=71, reinvested = True)
+        self.assertAlmostEqual(profit_loss, 13.5)
+
+        self.assertEqual(self.fund.holdings.count(), 3)
+        self.holding_1.refresh_from_db()
+        self.assertEqual(self.holding_1.quantity, 64)
+        self.assertEqual(self.holding_1.sold_on, timezone.now().date())
+        self.assertTrue(self.holding_1.reinvested)
+
+        self.holding_2.refresh_from_db()
+        self.assertEqual(self.holding_2.quantity, 7)
+        self.assertEqual(self.holding_2.sold_on, timezone.now().date())
+        self.assertTrue(self.holding_2.reinvested)
+
+        new_holding = exists(self.other_holdings.last())
+        self.assertEqual(new_holding.quantity, 25)
+        self.assertEqual(new_holding.bought_on, self.holding_2.bought_on)
+        self.assertEqual(new_holding.bought_at, self.holding_2.bought_at)
+        self.assertIsNone(new_holding.sold_on)
+        self.assertIsNone(new_holding.sold_at)
+        self.assertFalse(new_holding.reinvested)
 
 
     def test__sell__portfolio_string(self) -> None:

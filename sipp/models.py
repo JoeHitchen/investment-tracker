@@ -19,13 +19,16 @@ class Portfolio(models.Model):
 
     _active_holdings: list['Holding']  # Used for prefetching
     _closed_holdings: list['Holding']  # Used for prefetching
+    _reinvested_holdings: list['Holding']  # Used for prefetching
 
     def __str__(self) -> str:
         return self.type
 
 
     def active_holdings(self) -> Iterable['Holding']:
-        """Returns the active holdings for the portfolio, using a cache if provided."""
+        """Returns the active holdings for this portfolio.
+
+        Uses the property '_active_holdings' as a cache if available."""
 
         if hasattr(self, '_active_holdings'):
             return self._active_holdings
@@ -34,12 +37,25 @@ class Portfolio(models.Model):
 
 
     def closed_holdings(self) -> Iterable['Holding']:
-        """Returns the closed holdings for the portfolio, using a cache if provided."""
+        """Returns the closed holdings for this portfolio that _have not_ been reinvested.
+
+        Uses the property '_closed_holdings' as a cache if available."""
 
         if hasattr(self, '_closed_holdings'):
             return self._closed_holdings
         else:
-            return self.holdings.filter(sold_on__isnull=False)
+            return self.holdings.filter(sold_on__isnull=False, reinvested=False)
+
+
+    def reinvested_holdings(self) -> Iterable['Holding']:
+        """Returns the closed holdings for this portfolio that _have_ been reinvested.
+
+        Uses the property '_reinvested_holdings' as a cache if available."""
+
+        if hasattr(self, '_reinvested_holdings'):
+            return self._reinvested_holdings
+        else:
+            return self.holdings.filter(sold_on__isnull=False, reinvested=True)
 
 
     @cached_property
@@ -133,7 +149,13 @@ class Fund(models.Model):
 
 
     @transaction.atomic
-    def sell(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
+    def sell(
+        self,
+        portfolio: Portfolio | str,
+        quantity: float,
+        date: date | None = None,
+        reinvested: bool = False,
+    ) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.
 
         Funds are sold in age order, with the oldest holdings sold first.
@@ -152,10 +174,10 @@ class Fund(models.Model):
         holdings = self.holdings.filter(portfolio=portfolio, sold_on__isnull=True)
         for holding in holdings.order_by('bought_on'):
             if quantity <= holding.quantity:
-                profit_loss += holding.sell(quantity, date)
+                profit_loss += holding.sell(quantity, date, reinvested)
                 break
 
-            profit_loss += holding.sell(date = date)
+            profit_loss += holding.sell(date = date, reinvested = reinvested)
             quantity -= holding.quantity
         else:
             raise AssertionError('Attempting to sell more units than are held')
@@ -173,6 +195,8 @@ class Holding(models.Model):
     bought_at = models.IntegerField()  # In hundredths of a pence
     sold_on = models.DateField(null=True)
     sold_at = models.IntegerField(null=True)  # In hundredths of a pence
+
+    reinvested = models.BooleanField(default=False)
 
     _latest_price_points: list['PricePoint']  # Used for prefetching
 
@@ -240,13 +264,19 @@ class Holding(models.Model):
         """
 
         end_date = self.sold_on if self.sold_on else timezone.now().date()
+        number_of_days = (end_date - self.bought_on).days or 1
         profit_loss_multiplier = (1 + self.growth_rate / 100)
 
-        return 100 * (power(profit_loss_multiplier, (365 / (end_date - self.bought_on).days)) - 1)
+        return 100 * (power(profit_loss_multiplier, (365 / number_of_days)) - 1)
 
 
     @transaction.atomic
-    def sell(self, quantity: float | None = None, date: date | None = None) -> float:
+    def sell(
+        self,
+        quantity: float | None = None,
+        date: date | None = None,
+        reinvested: bool = False,
+    ) -> float:
         """Records the sale of the holding on the given date, defaulting to today.
 
         Partial sales are handled by creating a new holding with the remaining quantity.
@@ -264,6 +294,7 @@ class Holding(models.Model):
 
         assert date is None or (self.bought_on <= date <= timezone.now().date())
         self.sold_on = date if date else timezone.now().date()
+        self.reinvested = reinvested
 
         sold_price_point = self.fund.price_points.filter(date__lte=self.sold_on).last()
         self.sold_at = exists(sold_price_point).hundredths
