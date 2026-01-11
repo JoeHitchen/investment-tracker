@@ -238,19 +238,28 @@ class PortfolioGraphView(PortfolioView):
             if not len(holdings):
                 continue
 
+            fund_prices = self._get_fund_price_data(fund, all_days)
+
             costs = dict.fromkeys(all_days, 0.0)
             units_held = dict.fromkeys(all_days, 0.0)
+            fund_values = dict.fromkeys(all_days, 0.0)
             for holding in holdings:
                 holding_end = holding.sold_on or (date.today() + timedelta(1))
                 for i in range(0, (holding_end - holding.bought_on).days):
-                    costs[holding.bought_on + timedelta(i)] += holding.cost
-                    units_held[holding.bought_on + timedelta(i)] += holding.quantity
+                    i_day = holding.bought_on + timedelta(i)
+                    costs[i_day] += holding.cost
+                    units_held[i_day] += holding.quantity
+                    fund_values[i_day] += round(graph_data_func(
+                        holding.quantity,
+                        fund_prices[i_day],
+                        holding.cost,
+                    ), 2)
+                if not (context['profit_loss'] and holding.sold_on):
+                    continue
+                for i in range(0, (date.today() - holding.sold_on).days + 1):
+                    i_day = holding.sold_on + timedelta(i)
+                    fund_values[i_day] += round(holding.profit_loss, 2)
 
-            fund_prices = self._get_fund_price_data(fund, list(units_held.keys()))
-            fund_values = {
-                day: round(graph_data_func(units, fund_prices[day], costs[day]), 2)
-                for day, units in units_held.items()
-            }
             for day, value in fund_values.items():
                 portfolio_values[day] += value
 
