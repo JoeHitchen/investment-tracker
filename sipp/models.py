@@ -149,7 +149,13 @@ class Fund(models.Model):
 
 
     @transaction.atomic
-    def sell(self, portfolio: Portfolio | str, quantity: float, date: date | None = None) -> float:
+    def sell(
+        self,
+        portfolio: Portfolio | str,
+        quantity: float,
+        date: date | None = None,
+        reinvested: bool = False,
+    ) -> float:
         """Records the sale of fund holdings on the given date, defaulting to today.
 
         Funds are sold in age order, with the oldest holdings sold first.
@@ -168,10 +174,10 @@ class Fund(models.Model):
         holdings = self.holdings.filter(portfolio=portfolio, sold_on__isnull=True)
         for holding in holdings.order_by('bought_on'):
             if quantity <= holding.quantity:
-                profit_loss += holding.sell(quantity, date)
+                profit_loss += holding.sell(quantity, date, reinvested)
                 break
 
-            profit_loss += holding.sell(date = date)
+            profit_loss += holding.sell(date = date, reinvested = reinvested)
             quantity -= holding.quantity
         else:
             raise AssertionError('Attempting to sell more units than are held')
@@ -265,7 +271,12 @@ class Holding(models.Model):
 
 
     @transaction.atomic
-    def sell(self, quantity: float | None = None, date: date | None = None) -> float:
+    def sell(
+        self,
+        quantity: float | None = None,
+        date: date | None = None,
+        reinvested: bool = False,
+    ) -> float:
         """Records the sale of the holding on the given date, defaulting to today.
 
         Partial sales are handled by creating a new holding with the remaining quantity.
@@ -283,6 +294,7 @@ class Holding(models.Model):
 
         assert date is None or (self.bought_on <= date <= timezone.now().date())
         self.sold_on = date if date else timezone.now().date()
+        self.reinvested = reinvested
 
         sold_price_point = self.fund.price_points.filter(date__lte=self.sold_on).last()
         self.sold_at = exists(sold_price_point).hundredths
