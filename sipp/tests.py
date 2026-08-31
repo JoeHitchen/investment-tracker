@@ -1,10 +1,12 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, time
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.db.models import QuerySet
 from django.utils import timezone
 
 from sipp.models import Portfolio, Fund, Holding, PricePoint
+from sipp.templatetags.sipp_tags import is_todays_price
 from sipp.utils import exists, calculate_aer
 
 
@@ -777,4 +779,94 @@ class Test__AER(TestCase):
         ]
 
         self.assertAlmostEqual(calculate_aer(holdings), 0.3407, 4)
+
+
+class Test_Tags(TestCase):
+
+    def test__is_todays_price__standard_weekday_before_deadline(self) -> None:
+        """Flags a weekday price after 17:00 the following working day."""
+
+        wednesday = date(2026, 8, 26)
+        deadline = datetime.combine(
+            wednesday + timedelta(days=1),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+        current_time = deadline - timedelta(seconds = 1)
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+            self.assertEqual(is_todays_price(wednesday), '')
+
+
+    def test__is_todays_price__standard_weekday_after_deadline(self) -> None:
+        """Flags a weekday price after 17:00 the following working day."""
+
+        wednesday = date(2026, 8, 26)
+        deadline = datetime.combine(
+            wednesday + timedelta(days=1),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=deadline):
+            self.assertIn('🕔', is_todays_price(wednesday))
+
+
+    def test__is_todays_price__weekend_saturday(self) -> None:
+        """Does not flag Friday prices as dated on the weekend or before Monday 17:00."""
+
+        friday = date(2026, 8, 28)
+        deadline = datetime.combine(
+            friday + timedelta(days=3),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+        current_time = deadline - timedelta(days=2)
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+            self.assertEqual(is_todays_price(friday), '')
+
+
+    def test__is_todays_price__weekend_sunday(self) -> None:
+        """Does not flag Friday prices as dated on the weekend or before Monday 17:00."""
+
+        friday = date(2026, 8, 28)
+        deadline = datetime.combine(
+            friday + timedelta(days=3),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+        current_time = deadline - timedelta(days=1)
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+            self.assertEqual(is_todays_price(friday), '')
+
+
+    def test__is_todays_price__weekend_monday_before_deadline(self) -> None:
+        """Does not flag Friday prices as dated on the weekend or before Monday 17:00."""
+
+        friday = date(2026, 8, 28)
+        deadline = datetime.combine(
+            friday + timedelta(days=3),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+        current_time = deadline - timedelta(seconds=1)
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+            self.assertEqual(is_todays_price(friday), '')
+
+
+    def test__is_todays_price__weekend_monday_after_deadline(self) -> None:
+        """Does not flag Friday prices as dated on the weekend or before Monday 17:00."""
+
+        friday = date(2026, 8, 28)
+        deadline = datetime.combine(
+            friday + timedelta(days=3),
+            time(17, 0),
+            timezone.get_current_timezone(),
+        )
+
+        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=deadline):
+            self.assertIn('🕔', is_todays_price(friday))
 

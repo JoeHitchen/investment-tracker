@@ -16,6 +16,16 @@ class TimeSeriesPoint(TypedDict):
 register = template.Library()
 
 
+def _next_working_day(this_date: date) -> date:
+    """Returns the next working day after the given date."""
+    day_to_add = {
+        4: 3,  # Friday
+        5: 2,  # Saturday
+        6: 1,  # Sunday
+    }.get(this_date.weekday(), 1)
+    return this_date + timedelta(days=day_to_add)
+
+
 @register.filter
 def GBP(value: float) -> str:
     sign = '&minus;' if value < 0 else ''
@@ -30,12 +40,11 @@ def percent(value: float) -> str:
 
 @register.filter
 def is_todays_price(price_date: date) -> str:
+    if not price_date:
+        return ''
 
-    time_shift = timedelta(
-        days = max(timezone.now().isoweekday() - 5, 0),
-        hours = 17,
-    )
-    if price_date >= (timezone.now() - time_shift).date():
+    deadline = timezone.make_aware(datetime.combine(_next_working_day(price_date), time(17, 00)))
+    if timezone.now() < deadline:
         return ''
 
     return format_html(
