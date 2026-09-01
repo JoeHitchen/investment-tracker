@@ -2,10 +2,16 @@ name: Quality Control
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to run QA against
+        required: true
+        default: deploy
+        type: string
   schedule:
     - cron: '37 3 * * 5'
       timezone: 'Europe/London'
-
 
 jobs:
   linting:
@@ -14,6 +20,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -34,6 +42,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -54,6 +64,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v7

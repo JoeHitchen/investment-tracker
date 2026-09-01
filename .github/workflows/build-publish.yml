@@ -5,18 +5,29 @@ concurrency:
   cancel-in-progress: false
 
 on:
-  push:
-    branches:
-      - deploy
-      - github-actions-migration
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build and publish
+        required: true
+        default: deploy
+        type: string
+  workflow_run:
+    workflows:
+      - Quality Control
+    types:
+      - completed
 
 jobs:
   building:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'deploy')
     name: Building
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event.workflow_run.head_sha || github.ref_name }}
 
       - name: Build Docker image
         run: docker build -t joehitchen/sipp-tracker .
