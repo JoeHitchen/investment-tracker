@@ -1,0 +1,68 @@
+name: Build & Publish
+
+concurrency:
+  group: build-publish
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to build and publish
+        required: true
+        default: deploy
+        type: string
+  workflow_run:
+    workflows:
+      - Quality Control
+    types:
+      - completed
+
+jobs:
+  building:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'deploy')
+    name: Building
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event.workflow_run.head_sha || github.ref_name }}
+
+      - name: Build Docker image
+        run: docker build -t joehitchen/sipp-tracker .
+
+      - name: Run tests to verify image
+        run: docker run --rm joehitchen/sipp-tracker sh -c 'export PATH="$HOME/.local/bin:$PATH" && pip install -r requirements_testing.txt && pytest'
+
+      - name: Save image
+        run: docker save --output sipp-tracker.docker joehitchen/sipp-tracker
+
+      - name: Store image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: sipp-tracker-docker
+          path: sipp-tracker.docker
+
+  publishing:
+    name: Publishing
+    needs: building
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Retrieve image artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: sipp-tracker-docker
+          path: .
+
+      - name: Load image into Docker
+        run: docker load --input sipp-tracker.docker
+
+      - name: Push Docker image
+        run: docker push joehitchen/sipp-tracker

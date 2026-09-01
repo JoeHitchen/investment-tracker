@@ -1,0 +1,85 @@
+name: Quality Control
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to run QA against
+        required: true
+        default: deploy
+        type: string
+  schedule:
+    - cron: '37 3 * * 5'
+      timezone: 'Europe/London'
+
+jobs:
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_linting.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements_linting.txt
+
+      - name: Run checks
+        run: flake8
+
+  typing:
+    name: Typing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements_typing.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements_typing.txt
+
+      - name: Run checks
+        run: mypy
+
+  testing:
+    name: Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            requirements_testing.txt
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements_testing.txt
+
+      - name: Run checks
+        run: pytest
