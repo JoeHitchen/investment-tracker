@@ -1,0 +1,136 @@
+{% extends 'investment_tracker/base.html' %}
+{% load sipp_tags %}
+
+
+{% block page_content %}
+  {% for portfolio, funds, cash, reinvest, overall in portfolios %}<div class="col">
+    <div class="card mb-3" style="overflow:hidden"><div class="table-responsive">
+      <table class="table table-small table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th colspan="7" class="text-center"><div class="d-flex justify-content-between">
+              <i class="bi bi-arrow-left-square-fill text-dark"></i>
+              <span>{{ portfolio }} Investment Portfolio</span>
+              <a href="{% url 'investment_tracker:graph-total-value' portfolio|lower %}" class="bi bi-arrow-right-square-fill"></a>
+            </div></th>
+          </tr><tr>
+            <th rowspan="2" colspan="2" class="text-center align-middle sort-btn" data-sort="fnd">Fund<span class="sort-icon"></span></th>
+            <th rowspan="2" class="text-center align-middle sort-btn" data-sort="val">Current Value<span class="sort-icon"></span></th>
+            <th rowspan="2" class="text-center align-middle sort-btn" data-sort="cst">Purchase Price<span class="sort-icon"></span></th>
+            <th colspan="3" class="text-center">Profit/Loss</th>
+          </tr><tr>
+            <th class="text-center sort-btn" data-sort="pl">£<span class="sort-icon"></span></th>
+            <th class="text-center sort-btn" data-sort="gr">%<span class="sort-icon"></span></th>
+            <th class="text-center sort-btn" data-sort="aer">AER<span class="sort-icon"></span></th>
+          </tr>
+        </thead>
+        <tbody class="table-group-divider">
+          {% for fund in funds %}<tr class="fund-row" data-holdings="{{ portfolio.type|lower }}-{{ fund.id }}">
+            <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">
+              <span class="badge rounded-pill text-bg-info">{{ fund.active_holdings|length }}</span>&ensp;
+              {{ fund.name }}{{ fund.green|is_green_fund }}{{ fund.price_date|is_todays_price }}
+            </td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_value|GBP }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_cost|GBP }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.total_profit_loss|GBP }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_rate|percent }}</td>
+            <td class="text-end{% if fund.total_profit_loss < 0 %} text-danger{% endif %}">{{ fund.growth_aer|percent }}</td>
+          </tr>{% for holding in fund.active_holdings %}<tr class="table-light {{ portfolio.type|lower }}-{{ fund.id }} d-none">
+            <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.bought_on|date:"d/m/Y" }}</td>
+            <td{% if holding.profit_loss < 0 %} class="text-danger"{% endif %}>{{ holding.quantity|floatformat:4 }} units</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.value|GBP }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.cost|GBP }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.profit_loss|GBP }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_rate|percent }}</td>
+            <td class="text-end{% if holding.profit_loss < 0 %} text-danger{% endif %}">{{ holding.growth_aer|percent }}</td>
+          </tr>{% endfor %}{% endfor %}
+        </tbody>
+        <tfoot class="table-group-divider">
+          <tr class="table-dark">
+            <th{% if portfolio.total_profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Active Holdings</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_value|GBP }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_cost|GBP }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.total_profit_loss|GBP }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_rate|percent }}</th>
+            <th class="text-end{% if portfolio.total_profit_loss < 0 %} text-danger{% endif %}">{{ portfolio.growth_aer|percent }}</th>
+          </tr><tr>
+            <td{% if cash.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Cashed Out Holdings</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.value|GBP }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.cost|GBP }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.profit_loss|GBP }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_rate|percent }}</td>
+            <td class="text-end{% if cash.profit_loss < 0 %} text-danger{% endif %}">{{ cash.growth_aer|percent }}</td>
+          </tr><tr>
+            <td{% if reinvest.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Reinvested Holdings</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% else %} text-secondary{% endif %}">({{ reinvest.value|GBP }})</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% else %} text-secondary{% endif %}">({{ reinvest.cost|GBP }})</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.profit_loss|GBP }}</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.growth_rate|percent }}</td>
+            <td class="text-end{% if reinvest.profit_loss < 0 %} text-danger{% endif %}">{{ reinvest.growth_aer|percent }}</td>
+          </tr><tr class="table-dark">
+            <th{% if overall.profit_loss < 0 %} class="text-danger"{% endif %} colspan="2">Grand Total</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.value|GBP }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.cost|GBP }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.profit_loss|GBP }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_rate|percent }}</th>
+            <th class="text-end{% if overall.profit_loss < 0 %} text-danger{% endif %}">{{ overall.growth_aer|percent }}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div></div>
+  </div>{% endfor %}
+{% endblock %}
+
+
+{% block post_script %}<script type="text/javascript">
+  $(document).ready(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+    $(".sort-btn").click(sortTable);
+    $(".fund-row").click(toggleHoldings);
+    addSortIcon();
+  });
+
+  function addSortIcon(){
+    sortKey = new URLSearchParams(window.location.search).get("sort");
+    sortReversed = (sortKey[0] === "-");
+    sortIcon = sortReversed ? "bi-chevron-double-down" : "bi-chevron-double-up";
+    if (sortReversed) {
+      sortKey = sortKey.slice(1);
+    }
+
+    $(".sort-btn").each((i, obj) => {
+      element = $(obj);
+      if ($(element).data("sort") === sortKey) {
+        $(element).find("span").addClass("bi").addClass(sortIcon);
+      }
+    });
+  }
+
+  function sortTable(event) {
+    let queryParams = new URLSearchParams(window.location.search);
+
+    sortKey = $(event.target).data("sort");
+    if (sortKey === undefined) {
+      sortKey = $(event.target).parent().data("sort");
+    }
+
+    sign = queryParams.get("sort") === sortKey ? '-' : '';
+    window.location.href = "?sort=" + sign + sortKey;
+  }
+
+  function toggleHoldings(event) {
+    fundRow = $(event.target).parents(".fund-row");
+    holdingsBadge = fundRow.find(".badge");
+    holdingRows = $("."+fundRow.data("holdings"));
+    if (holdingsBadge.hasClass("text-bg-info")) {
+      fundRow.addClass("table-secondary").addClass("fw-semibold");
+      holdingsBadge.removeClass("text-bg-info").addClass("text-bg-secondary");
+      holdingRows.removeClass("d-none");
+    } else {
+      fundRow.removeClass("table-secondary").removeClass("fw-semibold");
+      holdingsBadge.removeClass("text-bg-secondary").addClass("text-bg-info");
+      holdingRows.addClass("d-none");
+    }
+  };
+</script>{% endblock %}
+
