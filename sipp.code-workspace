@@ -8,6 +8,41 @@
         "flake8.importStrategy": "fromEnvironment",
         "mypy-type-checker.importStrategy": "fromEnvironment",
         "python.testing.pytestArgs": ["core", "sipp"],
-        "python.testing.pytestEnabled": true
+        "python.testing.pytestEnabled": true,
+        "cSpell.language": "en-GB",
+        "cSpell.words": [
+            "beautifulsoup",
+            "boto",
+            "forloop",
+            "glogging",
+            "gunicorn",
+            "highcharts",
+            "isoformat",
+            "joehitchen",
+            "mypy",
+            "mysqlclient",
+            "pycurl",
+            "pytest",
+            "pyxirr",
+            "sipp",
+            "timezone",
+            "todays",
+            "vars",
+            "wsgi",
+            "xirr"
+        ]
+    },
+    "extensions": {
+        "recommendations": [
+            "streetsidesoftware.code-spell-checker-british-english",
+            "streetsidesoftware.code-spell-checker",
+            "ms-python.flake8",
+            "github.vscode-github-actions",
+            "usernamehw.errorlens",
+            "ms-python.mypy-type-checker",
+            "davidanson.vscode-markdownlint",
+            "redhat.vscode-yaml",
+            "ms-python.python"
+        ]
     }
 }
