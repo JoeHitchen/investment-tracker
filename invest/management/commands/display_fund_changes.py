@@ -6,14 +6,14 @@ from django.core.management.base import BaseCommand
 from django.db import models as db
 from typing_extensions import Unpack
 
-from ... import models as sipp
+from ... import models as invest
 from ...utils import Kwargs
 
 
 class FundWithPerformance(TypedDict):
-    fund: sipp.Fund
-    first_price: sipp.PricePoint
-    latest_price: sipp.PricePoint
+    fund: invest.Fund
+    first_price: invest.PricePoint
+    latest_price: invest.PricePoint
     performance: float
 
 
@@ -35,15 +35,15 @@ class Command(BaseCommand):
 
     def handle(self, start_date: date, **_: Unpack[Kwargs]) -> None:
 
-        funds_with_prefetches = sipp.Fund.objects.prefetch_related(  # type: ignore
+        funds_with_prefetches = invest.Fund.objects.prefetch_related(  # type: ignore
             db.Prefetch(  # First prices
                 'price_points',
-                sipp.PricePoint.objects.filter(date__gte=start_date).order_by('date'),
+                invest.PricePoint.objects.filter(date__gte=start_date).order_by('date'),
                 to_attr='_first_price_points',
             ),
             db.Prefetch(  # Latest prices
                 'price_points',
-                sipp.PricePoint.objects.all().order_by('-date'),
+                invest.PricePoint.objects.all().order_by('-date'),
                 to_attr='_latest_price_points',
             ),
         )
