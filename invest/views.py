@@ -36,7 +36,7 @@ class FundData(TypedDict):
 
 
 class IndexView(TemplateView):
-    template_name = 'investment_tracker/index.html'
+    template_name = 'invest/index.html'
 
     @staticmethod
     def sort_func(sort_key: str) -> SortFunc:
@@ -173,7 +173,7 @@ class IndexView(TemplateView):
 
 
 class PortfolioGraphView(PortfolioView):
-    template_name = 'investment_tracker/portfolio-graphs.html'
+    template_name = 'invest/portfolio-graphs.html'
     model = models.Portfolio
 
     def get_object(self, queryset: PortfolioQuerySet | None = None) -> models.Portfolio:

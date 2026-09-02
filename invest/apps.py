@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class InvestmentTrackerConfig(AppConfig):
+class InvestConfig(AppConfig):
     default_auto_field = 'django.db.models.AutoField'
-    name = 'investment_tracker'
+    name = 'invest'
     verbose_name = 'Investment Tracker'

@@ -11,11 +11,11 @@ from celery import Celery
 from celery.schedules import crontab
 
 from core import tasks
-from investment_tracker import models as investment_tracker
-from investment_tracker.utils import Kwargs
+from invest import models as invest
+from invest.utils import Kwargs
 
 
-logger = logging.getLogger('investment-tracker')
+logger = logging.getLogger('invest')
 
 
 class RefreshStatus(Enum):
@@ -31,8 +31,8 @@ class RefreshFundPriceResult(TypedDict):
 
 
 def refresh_fund_price(
-    fund: investment_tracker.Fund,
-) -> tuple[investment_tracker.PricePoint, RefreshStatus]:
+    fund: invest.Fund,
+) -> tuple[invest.PricePoint, RefreshStatus]:
 
     logger.info('{} ({}) - Refreshing price...'.format(
         fund.short_name,
@@ -81,7 +81,7 @@ def refresh_fund_price(
 
 @tasks.task
 def refresh_fund_price_async(fund_id: int) -> RefreshFundPriceResult:
-    price_point, status = refresh_fund_price(investment_tracker.Fund.objects.get(id=fund_id))
+    price_point, status = refresh_fund_price(invest.Fund.objects.get(id=fund_id))
     return {
         'fund': f'{price_point.fund.short_name} ({price_point.fund.tag})',
         'price': price_point.pence,
@@ -92,7 +92,7 @@ def refresh_fund_price_async(fund_id: int) -> RefreshFundPriceResult:
 @tasks.task
 def refresh_fund_prices_async() -> None:
     time.sleep(random.randint(0, 60))
-    for fund in investment_tracker.Fund.objects.filter(monitor_price = True):
+    for fund in invest.Fund.objects.filter(monitor_price = True):
         refresh_fund_price_async.delay(fund.id)
 
 
