@@ -30,9 +30,7 @@ class RefreshFundPriceResult(TypedDict):
     status: str
 
 
-def refresh_fund_price(
-    fund: invest.Fund,
-) -> tuple[invest.PricePoint, RefreshStatus]:
+def refresh_fund_price(fund: invest.Fund) -> tuple[invest.PricePoint, RefreshStatus]:
 
     logger.info('{} ({}) - Refreshing price...'.format(
         fund.short_name,
