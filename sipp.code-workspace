@@ -31,5 +31,18 @@
             "wsgi",
             "xirr"
         ]
+    },
+    "extensions": {
+        "recommendations": [
+            "streetsidesoftware.code-spell-checker-british-english",
+            "streetsidesoftware.code-spell-checker",
+            "ms-python.flake8",
+            "github.vscode-github-actions",
+            "usernamehw.errorlens",
+            "ms-python.mypy-type-checker",
+            "davidanson.vscode-markdownlint",
+            "redhat.vscode-yaml",
+            "ms-python.python"
+        ]
     }
 }
