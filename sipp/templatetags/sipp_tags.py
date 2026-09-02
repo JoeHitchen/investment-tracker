@@ -29,13 +29,13 @@ def _next_working_day(this_date: date) -> date:
 @register.filter
 def GBP(value: float) -> str:
     sign = '&minus;' if value < 0 else ''
-    return mark_safe(f'<span class="nobr">{sign}£{abs(value):,.2f}</span>')
+    return mark_safe(f'<span class="no-wrap">{sign}£{abs(value):,.2f}</span>')
 
 
 @register.filter
 def percent(value: float) -> str:
     sign = '&minus;' if value < 0 else ''
-    return mark_safe(f'<span class="nobr">{sign}{abs(value):,.1f}%</span>')
+    return mark_safe(f'<span class="no-wrap">{sign}{abs(value):,.1f}%</span>')
 
 
 @register.filter
