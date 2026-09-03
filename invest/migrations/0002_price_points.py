@@ -7,8 +7,8 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor as SchemaEdi
 
 
 def migrate_price_points(apps: Apps, schema_editor: SchemaEditor) -> None:
-    PricePoint = apps.get_model('sipp', 'PricePoint')
-    Fund = apps.get_model('sipp', 'Fund')
+    PricePoint = apps.get_model('invest', 'PricePoint')
+    Fund = apps.get_model('invest', 'Fund')
 
     for fund in Fund.objects.all():
         PricePoint.objects.create(
@@ -21,7 +21,7 @@ def migrate_price_points(apps: Apps, schema_editor: SchemaEditor) -> None:
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sipp', '0001_funds'),
+        ('invest', '0001_funds'),
     ]
 
     operations = [
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date', models.DateField()),
                 ('price_pence', models.IntegerField()),
-                ('fund', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='price_points', to='sipp.fund')),
+                ('fund', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='price_points', to='invest.fund')),
             ],
             options={
                 'db_table': 'sipp_price_point',

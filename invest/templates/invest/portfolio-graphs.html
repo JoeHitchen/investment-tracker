@@ -1,5 +1,5 @@
-{% extends 'sipp/base.html' %}
-{% load sipp_tags %}
+{% extends 'invest/base.html' %}
+{% load invest_tags %}
 
 
 {% block head_scripts %}
@@ -11,9 +11,9 @@
   <div class="col">
     <div class="card mb-3">
       <div class="card-header text-center text-white bg-dark d-flex justify-content-between">
-        <a href="{% url 'sipp:index' %}" class="bi bi-arrow-left-square-fill"></a>
+        <a href="{% url 'invest:index' %}" class="bi bi-arrow-left-square-fill"></a>
         <strong>{{ portfolio }} Investment Portfolio</strong>
-        <a href="{% if profit_loss %}{% url 'sipp:graph-total-value' portfolio|lower %}{% else %}{% url 'sipp:graph-profit-loss' portfolio|lower %}{% endif %}" class="bi bi-repeat"></a>
+        <a href="{% if profit_loss %}{% url 'invest:graph-total-value' portfolio|lower %}{% else %}{% url 'invest:graph-profit-loss' portfolio|lower %}{% endif %}" class="bi bi-repeat"></a>
       </div>
       <div class="card-body">
         <figure class="highcharts-figure">

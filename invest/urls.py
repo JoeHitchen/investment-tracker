@@ -3,7 +3,7 @@ from django.urls import path, include
 from . import views
 
 
-app_name = 'sipp'
+app_name = 'invest'
 
 urlpatterns = [
     path('portfolio/<str:portfolio>/', include([

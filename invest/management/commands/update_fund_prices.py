@@ -3,7 +3,7 @@ import logging
 
 from django.core.management import BaseCommand, call_command
 
-from ... import models as sipp
+from ... import models as invest
 from ...utils import Kwargs
 from ...tasks import refresh_fund_price
 
@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, **_: Unpack[Kwargs]) -> None:
 
-        for fund in sipp.Fund.objects.filter(monitor_price=True):
+        for fund in invest.Fund.objects.filter(monitor_price=True):
             try:
                 refresh_fund_price(fund)
             except Exception as err:

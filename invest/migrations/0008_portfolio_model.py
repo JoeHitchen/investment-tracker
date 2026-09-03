@@ -10,8 +10,8 @@ ISA = 'ISA'
 
 
 def migrate_portfolios(apps: Apps, schema_editor: SchemaEditor) -> None:
-    Portfolio = apps.get_model('sipp', 'Portfolio')
-    Holding = apps.get_model('sipp', 'Holding')
+    Portfolio = apps.get_model('invest', 'Portfolio')
+    Holding = apps.get_model('invest', 'Holding')
 
     sipp = Portfolio.objects.create(type = SIPP)
     isa = Portfolio.objects.create(type = ISA)
@@ -21,7 +21,7 @@ def migrate_portfolios(apps: Apps, schema_editor: SchemaEditor) -> None:
 
 
 def reverse_portfolios(apps: Apps, schema_editor: SchemaEditor) -> None:
-    Holding = apps.get_model('sipp', 'Holding')
+    Holding = apps.get_model('invest', 'Holding')
 
     Holding.objects.filter(portfolio__type=SIPP).update(portfolio_old=SIPP)
     Holding.objects.filter(portfolio__type=ISA).update(portfolio_old=ISA)
@@ -30,7 +30,7 @@ def reverse_portfolios(apps: Apps, schema_editor: SchemaEditor) -> None:
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sipp', '0007_holding_portfolio'),
+        ('invest', '0007_holding_portfolio'),
     ]
 
     operations = [
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='holding',
             name='portfolio',
-            field=models.ForeignKey(null=True, on_delete=models.deletion.CASCADE, related_name='holdings', to='sipp.portfolio'),
+            field=models.ForeignKey(null=True, on_delete=models.deletion.CASCADE, related_name='holdings', to='invest.portfolio'),
         ),
         migrations.RunPython(
             code=migrate_portfolios,
@@ -67,6 +67,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='holding',
             name='portfolio',
-            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='holdings', to='sipp.portfolio'),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='holdings', to='invest.portfolio'),
         ),
     ]
