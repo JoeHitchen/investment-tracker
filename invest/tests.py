@@ -5,9 +5,9 @@ from django.test import TestCase
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from sipp.models import Portfolio, Fund, Holding, PricePoint
-from sipp.templatetags.sipp_tags import is_todays_price
-from sipp.utils import exists, calculate_aer
+from invest.models import Portfolio, Fund, Holding, PricePoint
+from invest.templatetags.invest_tags import is_todays_price
+from invest.utils import exists, calculate_aer
 
 
 class Test_Portfolio(TestCase):
@@ -794,7 +794,7 @@ class Test_Tags(TestCase):
         )
         current_time = deadline - timedelta(seconds = 1)
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=current_time):
             self.assertEqual(is_todays_price(wednesday), '')
 
 
@@ -808,7 +808,7 @@ class Test_Tags(TestCase):
             timezone.get_current_timezone(),
         )
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=deadline):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=deadline):
             self.assertIn('🕔', is_todays_price(wednesday))
 
 
@@ -823,7 +823,7 @@ class Test_Tags(TestCase):
         )
         current_time = deadline - timedelta(days=2)
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=current_time):
             self.assertEqual(is_todays_price(friday), '')
 
 
@@ -838,7 +838,7 @@ class Test_Tags(TestCase):
         )
         current_time = deadline - timedelta(days=1)
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=current_time):
             self.assertEqual(is_todays_price(friday), '')
 
 
@@ -853,7 +853,7 @@ class Test_Tags(TestCase):
         )
         current_time = deadline - timedelta(seconds=1)
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=current_time):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=current_time):
             self.assertEqual(is_todays_price(friday), '')
 
 
@@ -867,6 +867,6 @@ class Test_Tags(TestCase):
             timezone.get_current_timezone(),
         )
 
-        with patch('sipp.templatetags.sipp_tags.timezone.now', return_value=deadline):
+        with patch('invest.templatetags.invest_tags.timezone.now', return_value=deadline):
             self.assertIn('🕔', is_todays_price(friday))
 

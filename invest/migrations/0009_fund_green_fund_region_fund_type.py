@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sipp', '0008_portfolio_model'),
+        ('invest', '0008_portfolio_model'),
     ]
 
     operations = [

@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sipp', '0002_price_points'),
+        ('invest', '0002_price_points'),
     ]
 
     operations = [

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db import models as db
 from typing_extensions import Unpack
 
-from ... import models as sipp
+from ... import models as invest
 from ...utils import Kwargs
 
 
@@ -28,13 +28,13 @@ class Command(BaseCommand):
 
 
     def handle(self, **kwargs: Unpack[PortfolioKwargs]) -> None:
-        for portfolio in sipp.Portfolio.objects.all():
+        for portfolio in invest.Portfolio.objects.all():
             self.display_single_portfolio(portfolio, kwargs['eval_date'])
 
 
-    def display_single_portfolio(self, portfolio: sipp.Portfolio, eval_date: date) -> None:
+    def display_single_portfolio(self, portfolio: invest.Portfolio, eval_date: date) -> None:
 
-        funds_with_holdings = sipp.Fund.objects.annotate(  # type: ignore
+        funds_with_holdings = invest.Fund.objects.annotate(  # type: ignore
             total_quantity=db.Sum(
                 db.Case(db.When(
                     holdings__portfolio=portfolio,
@@ -47,7 +47,7 @@ class Command(BaseCommand):
             ),
         ).prefetch_related(db.Prefetch(
             'price_points',
-            sipp.PricePoint.objects.filter(date__lte=eval_date).order_by('-date'),
+            invest.PricePoint.objects.filter(date__lte=eval_date).order_by('-date'),
             to_attr='_latest_price_points',
         )).filter(total_quantity__gt=0.0)
 

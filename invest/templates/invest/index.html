@@ -1,5 +1,5 @@
-{% extends 'sipp/base.html' %}
-{% load sipp_tags %}
+{% extends 'invest/base.html' %}
+{% load invest_tags %}
 
 
 {% block page_content %}
@@ -11,7 +11,7 @@
             <th colspan="7" class="text-center"><div class="d-flex justify-content-between">
               <i class="bi bi-arrow-left-square-fill text-dark"></i>
               <span>{{ portfolio }} Investment Portfolio</span>
-              <a href="{% url 'sipp:graph-total-value' portfolio|lower %}" class="bi bi-arrow-right-square-fill"></a>
+              <a href="{% url 'invest:graph-total-value' portfolio|lower %}" class="bi bi-arrow-right-square-fill"></a>
             </div></th>
           </tr><tr>
             <th rowspan="2" colspan="2" class="text-center align-middle sort-btn" data-sort="fnd">Fund<span class="sort-icon"></span></th>

@@ -7,7 +7,7 @@
     "settings": {
         "flake8.importStrategy": "fromEnvironment",
         "mypy-type-checker.importStrategy": "fromEnvironment",
-        "python.testing.pytestArgs": ["core", "sipp"],
+        "python.testing.pytestArgs": ["core", "invest"],
         "python.testing.pytestEnabled": true,
         "cSpell.language": "en-GB",
         "cSpell.words": [

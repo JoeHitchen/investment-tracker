@@ -8,7 +8,7 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor as SchemaEdi
 
 
 def migrate_holdings(apps: Apps, schema_editor: SchemaEditor) -> None:
-    Fund = apps.get_model('sipp', 'Fund')
+    Fund = apps.get_model('invest', 'Fund')
 
     for fund in Fund.objects.all():
         fund.holdings.create(
@@ -19,7 +19,7 @@ def migrate_holdings(apps: Apps, schema_editor: SchemaEditor) -> None:
 
 
 def reset_fund_holdings(apps: Apps, schema_editor: SchemaEditor) -> None:
-    Fund = apps.get_model('sipp', 'Fund')
+    Fund = apps.get_model('invest', 'Fund')
 
     for fund in Fund.objects.all():
         holding = fund.holdings.first()
@@ -39,7 +39,7 @@ def reset_fund_holdings(apps: Apps, schema_editor: SchemaEditor) -> None:
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sipp', '0003_rename_price_to_hundredths'),
+        ('invest', '0003_rename_price_to_hundredths'),
     ]
 
     operations = [
@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 ('quantity', models.FloatField()),
                 ('bought_on', models.DateField()),
                 ('bought_at', models.IntegerField()),
-                ('fund', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='holdings', to='sipp.fund')),
+                ('fund', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='holdings', to='invest.fund')),
             ],
             options={
                 'ordering': ['fund', 'bought_on', '-quantity'],

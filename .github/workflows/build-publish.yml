@@ -30,19 +30,19 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event.workflow_run.head_sha || github.ref_name }}
 
       - name: Build Docker image
-        run: docker build -t joehitchen/sipp-tracker .
+        run: docker build -t joehitchen/investment-tracker .
 
       - name: Run tests to verify image
-        run: docker run --rm joehitchen/sipp-tracker sh -c 'export PATH="$HOME/.local/bin:$PATH" && pip install -r requirements_testing.txt && pytest'
+        run: docker run --rm joehitchen/investment-tracker sh -c 'export PATH="$HOME/.local/bin:$PATH" && pip install -r requirements_testing.txt && pytest'
 
       - name: Save image
-        run: docker save --output sipp-tracker.docker joehitchen/sipp-tracker
+        run: docker save --output investment-tracker.docker joehitchen/investment-tracker
 
       - name: Store image artifact
         uses: actions/upload-artifact@v7
         with:
-          name: sipp-tracker-docker
-          path: sipp-tracker.docker
+          name: investment-tracker-docker
+          path: investment-tracker.docker
 
   publishing:
     name: Publishing
@@ -58,11 +58,11 @@ jobs:
       - name: Retrieve image artifact
         uses: actions/download-artifact@v8
         with:
-          name: sipp-tracker-docker
+          name: investment-tracker-docker
           path: .
 
       - name: Load image into Docker
-        run: docker load --input sipp-tracker.docker
+        run: docker load --input investment-tracker.docker
 
       - name: Push Docker image
-        run: docker push joehitchen/sipp-tracker
+        run: docker push joehitchen/investment-tracker
