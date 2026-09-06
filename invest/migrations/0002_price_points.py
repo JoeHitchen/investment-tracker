@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('fund', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='price_points', to='invest.fund')),
             ],
             options={
-                'db_table': 'sipp_price_point',
+                'db_table': 'invest_price_point',
                 'ordering': ['fund', 'date'],
                 'unique_together': {('fund', 'date')},
             },
