@@ -117,7 +117,7 @@ class IndexView(TemplateView):
                 models.Holding.objects.filter(sold_on__isnull=False, reinvested = True),
                 to_attr = '_reinvested_holdings',
             ),
-        )
+        ).order_by('type')
 
         context['portfolios'] = []
         for portfolio in portfolios:
