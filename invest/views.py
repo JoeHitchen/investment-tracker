@@ -154,7 +154,7 @@ class IndexView(TemplateView):
                 'cost': grand_cost,
                 'value': portfolio.total_value + cash_properties['value'],
                 'profit_loss': grand_profit_loss,
-                'growth_rate': 100 * grand_profit_loss / grand_cost,
+                'growth_rate': 100 * grand_profit_loss / (grand_cost or 1),
                 'growth_aer': 100 * utils.calculate_aer(
                     list(portfolio.closed_holdings())
                     + list(portfolio.reinvested_holdings())

@@ -76,7 +76,7 @@ class Portfolio(models.Model):
     @cached_property
     def growth_rate(self) -> float:
         """Returns the overall growth rate of the active holdings."""
-        return 100 * self.total_profit_loss / self.total_cost
+        return 100 * self.total_profit_loss / (self.total_cost or 1)
 
     @cached_property
     def growth_aer(self) -> float:
