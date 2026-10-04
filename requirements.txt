@@ -3,3 +3,5 @@ celery
 requests
 beautifulsoup4
 pyxirr
+
+Firefly-III-API-Client

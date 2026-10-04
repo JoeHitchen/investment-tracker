@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'invest',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +80,11 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULTS')
 CELERY_BROKER_TRANSPORT_OPTIONS = json.loads(os.environ.get('CELERY_BROKER_OPTIONS', '{}'))
 CELERY_TIMEZONE = 'Europe/London'
+
+
+# Firefly integration
+FIREFLY_HOST = os.environ.get('FIREFLY_HOST', '')
+FIREFLY_API_TOKEN = os.environ.get('FIREFLY_API_TOKEN', '')
 
 
 # Password validation
