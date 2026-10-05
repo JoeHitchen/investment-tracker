@@ -1,0 +1,91 @@
+{% extends 'invest/base.html' %}
+
+{% block head_scripts %}
+<style type="text/css">
+  :root {
+    --blue-1: #dce9f5;
+    --blue-2: #a8c6e3;
+    --blue-3: #2a7ab0;
+
+    --rule: 1px solid #143f5d;
+    --hover: rgba(20, 63, 93, 0.08);
+  }
+
+  .report-nav {
+    --bs-navbar-brand-color: #fff;
+    --bs-navbar-brand-hover-color: #fff;
+    --bs-navbar-color: rgba(255, 255, 255, 0.85);
+    --bs-navbar-hover-color: #fff;
+    --bs-navbar-active-color: #fff;
+    background: var(--blue-3);
+  }
+  .report-nav .nav-link.active {
+    background: rgba(20, 63, 93, 0.45);
+    border-radius: var(--bs-border-radius);
+  }
+
+  td:first-child, th:first-child {
+    padding-left: 0.75rem;
+  }
+  td:last-child, th:last-child {
+    padding-right: 0.75rem;
+  }
+
+  .card {
+    border: var(--rule);
+  }
+  .table :is(thead, tbody, tfoot) :is(th, td) {
+    border-bottom-width: 0;
+  }
+  tbody, tfoot, thead tr:not(:first-child) th {
+    border-top: var(--rule);
+  }
+
+  .table thead th {
+    background: var(--blue-3);
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .group-end {
+    border-right: var(--rule);
+  }
+
+  td.total-1, .total-1 td {
+    background: var(--blue-1);
+  }
+  tr.total-1 td.total-1 {
+    background: var(--blue-2);
+  }
+
+  .table-hover {
+    --bs-table-hover-bg: var(--hover);
+  }
+  .table-hover > tfoot > tr:hover > * {
+    --bs-table-bg-state: var(--bs-table-hover-bg);
+  }
+</style>
+{% endblock %}
+
+
+{% block page_nav %}
+<nav class="navbar navbar-expand navbar-dark report-nav">
+  <div class="container">
+    <span class="navbar-brand">Reports</span>
+    <ul class="navbar-nav me-auto">
+      {% with current=request.resolver_match.url_name %}
+      <li class="nav-item"><a class="nav-link{% if current == 'isa' %} active{% endif %}" href="{% url 'reports:isa' %}">ISA Contributions</a></li>
+      {% endwith %}
+    </ul>
+  </div>
+</nav>
+{% endblock %}
+
+
+{% block page_content %}
+<div class="col-12">
+
+  {% block report_content %}{% endblock %}
+
+</div>
+{% endblock %}

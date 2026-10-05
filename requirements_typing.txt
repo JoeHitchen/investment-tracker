@@ -7,3 +7,4 @@ types-beautifulsoup4
 # Project Installs
 celery
 pyxirr
+Firefly-III-API-Client

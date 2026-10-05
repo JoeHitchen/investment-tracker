@@ -1,0 +1,40 @@
+{% extends 'reports/base.html' %}
+{% load invest_tags report_tags %}
+
+
+{% block report_content %}
+  <h2>ISA Contributions</h2>
+  <p class="text-muted">
+    Money newly paid into ISA accounts by tax month. Excludes interest, and money transferred from other ISA accounts.
+  </p>
+
+  {% for report in reports reversed %}<div class="card mb-3 overflow-hidden"><div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead>
+        <tr>
+          <th class="text-center" colspan="{{ report.by_account|length|add:2 }}">Tax Year {{ report.label }}</th>
+        </tr>
+        <tr>
+          <th class="group-end">Tax Month</th>
+          {% for account in report.by_account %}<th class="text-end{% if forloop.last %} group-end{% endif %}">{{ accounts|lookup:account }}</th>
+          {% endfor %}<th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for month in report.months reversed %}{% if month.has_started %}<tr>
+          <td class="group-end">{{ month.start_date|date:"M Y" }}</td>
+          {% for account in report.by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}">{{ month.by_account|lookup:account|GBP_with_blank }}</td>
+          {% endfor %}<td class="text-end total-1"><strong>{{ month.total|GBP_with_blank }}</strong></td>
+        </tr>{% endif %}{% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-1">
+          <td class="group-end"><strong>{% if report.is_partial %}Running {% endif %}Total</strong></td>
+          {% for account in report.by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}"><strong>{{ report.by_account|lookup:account|GBP_with_blank }}</strong></td>
+          {% endfor %}<td class="text-end total-1"><strong>{{ report.total|GBP }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div></div>
+  {% endfor %}
+{% endblock %}
