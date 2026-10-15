@@ -58,6 +58,14 @@
     background: var(--blue-2);
   }
 
+  td.total-2 {
+    background: var(--blue-2);
+  }
+  tr.total-1 td.total-2 {
+    background: var(--blue-3);
+    color: #fff;
+  }
+
   .table-hover {
     --bs-table-hover-bg: var(--hover);
   }
@@ -75,6 +83,7 @@
     <ul class="navbar-nav me-auto">
       {% with current=request.resolver_match.url_name %}
       <li class="nav-item"><a class="nav-link{% if current == 'isa' %} active{% endif %}" href="{% url 'reports:isa' %}">ISA Contributions</a></li>
+      <li class="nav-item"><a class="nav-link{% if current == 'interest' %} active{% endif %}" href="{% url 'reports:interest' %}">Interest Earned</a></li>
       {% endwith %}
     </ul>
   </div>

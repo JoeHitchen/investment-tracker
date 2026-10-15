@@ -6,8 +6,13 @@ from typing import Iterable
 AccountTotals = dict[str, float]
 
 INTEREST_CATEGORY = 'Interest'
+INTEREST_TAXABLE_SOURCE = '32'
 INTEREST_TAX_FREE_SOURCE = '48'
 
+INTEREST_SOURCES: dict[str, str] = {
+    INTEREST_TAXABLE_SOURCE: 'Interest (Taxable)',
+    INTEREST_TAX_FREE_SOURCE: 'Interest (Tax-free)',
+}
 
 ISA_ACCOUNTS: dict[str, str] = {
     '10': 'HL Chetwood ISA (Flexible)',

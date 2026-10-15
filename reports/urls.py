@@ -7,4 +7,5 @@ app_name = 'reports'
 
 urlpatterns = [
     path('isa-report/', views.IsaReport.as_view(), name = 'isa'),
+    path('interest-report/', views.InterestReport.as_view(), name = 'interest'),
 ]

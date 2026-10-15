@@ -1,0 +1,53 @@
+{% extends 'reports/base.html' %}
+{% load invest_tags report_tags %}
+
+
+{% block report_content %}
+  <h2>Interest Earned</h2>
+  <p class="text-muted">
+    Interest earned in each tax year, broken down by month, account, and taxable status.
+  </p>
+
+  {% for report in reports reversed %}<div class="card mb-3 overflow-hidden"><div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead>
+        <tr>
+          <th class="text-center" colspan="{{ report.total_accounts|add:4 }}">Tax Year {{ report.label }}</th>
+        </tr>
+        <tr>
+          <th rowspan="2" class="group-end">Tax Month</th>
+          <th class="text-center group-end" colspan="{{ report.taxable_by_account|length|add:1 }}">Taxable</th>
+          <th class="text-center group-end" colspan="{{ report.tax_free_by_account|length|add:1 }}">Tax-free</th>
+          <th rowspan="2" class="text-end align-bottom">Total</th>
+        </tr>
+        <tr>
+          {% for account in report.taxable_by_account %}<th class="text-end{% if forloop.last %} group-end{% endif %}">{{ accounts|lookup:account }}</th>
+          {% endfor %}<th class="text-end group-end">Total</th>
+          {% for account in report.tax_free_by_account %}<th class="text-end{% if forloop.last %} group-end{% endif %}">{{ accounts|lookup:account }}</th>
+          {% endfor %}<th class="text-end group-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for month in report.months reversed %}{% if month.has_started %}<tr>
+          <td class="group-end">{{ month.start_date|date:"M Y" }}</td>
+          {% for account in report.taxable_by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}">{{ month.taxable_by_account|lookup:account|GBP_with_blank }}</td>
+          {% endfor %}<td class="text-end total-1 group-end"><strong>{{ month.taxable|GBP_with_blank }}</strong></td>
+          {% for account in report.tax_free_by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}">{{ month.tax_free_by_account|lookup:account|GBP_with_blank }}</td>
+          {% endfor %}<td class="text-end total-1 group-end"><strong>{{ month.tax_free|GBP_with_blank }}</strong></td>
+          <td class="text-end total-2"><strong>{{ month.total|GBP_with_blank }}</strong></td>
+        </tr>{% endif %}{% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="total-1">
+          <td class="group-end"><strong>{% if report.is_partial %}Running {% endif %}Total</strong></td>
+          {% for account in report.taxable_by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}"><strong>{{ report.taxable_by_account|lookup:account|GBP_with_blank }}</strong></td>
+          {% endfor %}<td class="text-end total-1 group-end"><strong>{{ report.taxable|GBP }}</strong></td>
+          {% for account in report.tax_free_by_account %}<td class="text-end{% if forloop.last %} group-end{% endif %}"><strong>{{ report.tax_free_by_account|lookup:account|GBP_with_blank }}</strong></td>
+          {% endfor %}<td class="text-end total-1 group-end"><strong>{{ report.tax_free|GBP }}</strong></td>
+          <td class="text-end total-2"><strong>{{ report.total|GBP }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div></div>
+  {% endfor %}
+{% endblock %}
