@@ -50,4 +50,46 @@
     </table>
   </div></div>
   {% endfor %}
+
+  <h3 class="mt-4">Data Consistency Checks</h3>
+
+  {% if missing_category %}<p class="text-muted">
+    <i class="bi bi-x-circle-fill text-danger"></i>&nbsp;
+    Transactions from interest sources or to interest destinations but missing the "Interest" category:
+  </p>
+  {% include 'reports/inconsistency-table.html' with rows=missing_category %}
+  {% else %}<p class="text-muted">
+    <i class="bi bi-check-circle-fill text-success"></i>&nbsp;
+    All transactions from interest sources or to interest destinations have the "Interest" category set.
+  </p>{% endif %}
+
+  {% if unexpected_source %}<p class="text-muted">
+    <i class="bi bi-x-circle-fill text-danger"></i>&nbsp;
+    Transactions in the "Interest" category but with an unexpected source or destination:
+  </p>
+  {% include 'reports/inconsistency-table.html' with rows=unexpected_source %}
+  {% else %}<p class="text-muted">
+    <i class="bi bi-check-circle-fill text-success"></i>&nbsp;
+    All transactions in the "Interest" category have an interest source or destination.
+  </p>{% endif %}
+
+  {% if tax_free_not_isa %}<p class="text-muted">
+    <i class="bi bi-x-circle-fill text-danger"></i>&nbsp;
+    Tax-free interest paid into an account which is not an ISA account:
+  </p>
+  {% include 'reports/inconsistency-table.html' with rows=tax_free_not_isa %}
+  {% else %}<p class="text-muted">
+    <i class="bi bi-check-circle-fill text-success"></i>&nbsp;
+    All tax-free interest is paid into ISA accounts.
+  </p>{% endif %}
+
+  {% if taxable_isa %}<p class="text-muted">
+    <i class="bi bi-x-circle-fill text-danger"></i>&nbsp;
+    Taxable interest paid into an ISA account:
+  </p>
+  {% include 'reports/inconsistency-table.html' with rows=taxable_isa %}
+  {% else %}<p class="text-muted">
+    <i class="bi bi-check-circle-fill text-success"></i>&nbsp;
+    All taxable interest is paid into non-ISA accounts.
+  </p>{% endif %}
 {% endblock %}

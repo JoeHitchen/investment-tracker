@@ -85,6 +85,7 @@ CELERY_TIMEZONE = 'Europe/London'
 # Firefly integration
 FIREFLY_API_URL = os.environ.get('FIREFLY_API_URL', '')
 FIREFLY_API_TOKEN = os.environ.get('FIREFLY_API_TOKEN', '')
+FIREFLY_PUBLIC_DOMAIN = os.environ.get('FIREFLY_PUBLIC_DOMAIN', '')
 
 
 # Password validation

@@ -13,6 +13,9 @@ INTEREST_SOURCES: dict[str, str] = {
     INTEREST_TAXABLE_SOURCE: 'Interest (Taxable)',
     INTEREST_TAX_FREE_SOURCE: 'Interest (Tax-free)',
 }
+INTEREST_DESTINATIONS: dict[str, str] = {
+    '56': 'Debt Interest',
+}
 
 ISA_ACCOUNTS: dict[str, str] = {
     '10': 'HL Chetwood ISA (Flexible)',

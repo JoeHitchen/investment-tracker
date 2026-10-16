@@ -1,0 +1,28 @@
+{% load invest_tags report_tags %}<div class="card mb-3 overflow-hidden"><div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead>
+        <tr>
+          <th class="text-start">Date</th>
+          <th class="text-start">Description</th>
+          <th class="text-start">Type</th>
+          <th class="text-start">Source</th>
+          <th class="text-start">Destination</th>
+          <th class="text-start">Category</th>
+          <th class="text-end">Amount</th>
+          <th class="text-center">Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group_id, transaction in rows %}<tr>
+          <td>{{ transaction.var_date|date:"Y-m-d" }}</td>
+          <td>{{ transaction.description }}</td>
+          <td>{{ transaction.type.value|capfirst }}</td>
+          <td>{{ transaction.source_name }}</td>
+          <td>{{ transaction.destination_name }}</td>
+          <td>{{ transaction.category_name|default:"-" }}</td>
+          <td class="text-end">{{ transaction.amount|float|GBP }}</td>
+          <td class="text-center"><a class="link-primary" href="{{ firefly_public_domain }}/transactions/edit/{{ group_id }}" target="_blank" rel="noopener">Edit <i class="bi bi-box-arrow-up-right"></i></a></td>
+        </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div></div>
