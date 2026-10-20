@@ -76,7 +76,14 @@ jobs:
         run: |
           for i in $(seq 1 30); do
             if ${{ matrix.ready-check }}; then
-              echo "Ready"
+              echo "Ready - checking container is stable"
+              sleep 5
+              if [ "$(docker inspect -f '{{.State.Running}}' ${{ matrix.container-name }})" != "true" ]; then
+                echo "::error::${{ matrix.container-name }} crashed after becoming ready"
+                docker logs ${{ matrix.container-name }}
+                exit 1
+              fi
+              echo "Stable"
               exit 0
             fi
             if [ "$(docker inspect -f '{{.State.Running}}' ${{ matrix.container-name }} 2>/dev/null)" != "true" ]; then
